@@ -1,38 +1,27 @@
-const CACHE = 'terrawatch-1773352082';
-const ASSETS = ['/Terrawatch/', '/Terrawatch/index.html', '/Terrawatch/manifest.json', '/Terrawatch/worker.js'];
+const VER = 'tw-' + self.registration.scope
+const ASSETS = ['./','./index.html']
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{}))
-  );
-  self.skipWaiting();
-});
-
+  e.waitUntil(caches.open(VER).then(c => c.addAll(ASSETS).catch(()=>{})))
+  self.skipWaiting()
+})
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==VER).map(k=>caches.delete(k)))))
+  self.clients.claim()
+})
 self.addEventListener('fetch', e => {
-  if(e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  // Always network-first for HTML (to pick up updates immediately)
-  if(url.pathname.endsWith('/') || url.pathname.endsWith('.html') || url.pathname.endsWith('worker.js')) {
-    e.respondWith(
-      fetch(e.request).then(r => {
-        const clone = r.clone();
-        caches.open(CACHE).then(c=>c.put(e.request, clone));
-        return r;
-      }).catch(() => caches.match(e.request))
-    );
-    return;
+  if(e.request.method!=='GET') return
+  // Network-first for HTML + worker, cache-first for assets
+  const url = new URL(e.request.url)
+  const isNav = e.request.mode==='navigate'
+  const isWorker = url.pathname.endsWith('worker.js')
+  if(isNav || isWorker){
+    e.respondWith(fetch(e.request).then(r=>{
+      const clone=r.clone()
+      caches.open(VER).then(c=>c.put(e.request,clone))
+      return r
+    }).catch(()=>caches.match(e.request)))
+  } else {
+    e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))
   }
-  // Cache-first for static assets
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
-});
+})
