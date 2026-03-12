@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TerraWatch">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -367,8 +368,13 @@ const T={
   heat:      {l:"Calor Extremo",c:"#FF6B35",g:"rgba(255,107,53,.25)",cg1:"rgba(50,15,0,.55)",ct:"rgba(255,90,20,.05)",ib:"rgba(255,90,20,.2)",ig:"rgba(255,90,20,.18)",bg:{c1:"#0A0200",c2:"#1E0500",p:"#FF5010",m:"heat"},i:iHt},
   cold:      {l:"Frio Extremo",c:"#A8D8EA",g:"rgba(168,216,234,.22)",cg1:"rgba(0,10,28,.55)",ct:"rgba(160,220,240,.04)",ib:"rgba(160,220,240,.16)",ig:"rgba(160,220,240,.14)",bg:{c1:"#00050A",c2:"#000D18",p:"#80C0D8",m:"snow"},i:iCo},
 };
-const SV_BASE={critical:{c:"#FF453A",b:"rgba(255,69,58,.12)",br:"rgba(255,69,58,.22)"},high:{c:"#FF9F0A",b:"rgba(255,159,10,.1)",br:"rgba(255,159,10,.18)"},medium:{c:"#FFD60A",b:"rgba(255,214,10,.08)",br:"rgba(255,214,10,.14)"},low:{c:"#30D158",b:"rgba(48,209,88,.07)",br:"rgba(48,209,88,.14)"}};
-const SV=new Proxy(SV_BASE,{get:(t,k)=>{const s=t[k];return s?{...s,l:t$&&t$(k)||k.toUpperCase()}:undefined;}});
+const SV={
+  critical:{l:"CRÍTICO",c:"#FF453A",b:"rgba(255,69,58,.12)",br:"rgba(255,69,58,.22)"},
+  high:{l:"ALTO",c:"#FF9F0A",b:"rgba(255,159,10,.1)",br:"rgba(255,159,10,.18)"},
+  medium:{l:"MÉDIO",c:"#FFD60A",b:"rgba(255,214,10,.08)",br:"rgba(255,214,10,.14)"},
+  low:{l:"BAIXO",c:"#30D158",b:"rgba(48,209,88,.07)",br:"rgba(48,209,88,.14)"}
+};
+const SV_BASE=SV;
 const BGA={c1:"#030308",c2:"#07070F",p:"#3040A8",m:"stars"};
 
 // ─── PROXIMITY TIPS ────────────────────────────────────────────
@@ -1048,6 +1054,7 @@ async function fPDC(){
 async function loadAll(force=false){
   if(isLoading&&!force)return;
   isLoading=true;
+  try{
   initPipe();
   const ico=document.getElementById('rico');ico.style.animation='spin .7s linear infinite';
   document.getElementById('llbl').textContent='Carregando';
@@ -1092,13 +1099,14 @@ async function loadAll(force=false){
   document.getElementById('pbtot').textContent=events.length+' alertas';
   renderAll();chkProx();
   setTimeout(()=>document.getElementById('pbar').classList.remove('open'),5000);
+  }catch(e){console.error('loadAll error:',e);}finally{isLoading=false;}
 }
 
 // ─── AUTO-REFRESH + RETRY ────────────────────────────────────
 let _refreshTimer=null, _retryCount=0;
 const REFRESH_MS=600000, RETRY_MS=[15000,30000,60000,120000];
 
-function scheduleRefresh(delay=REFRESH_MS){
+async function scheduleRefresh(delay=REFRESH_MS){
   clearTimeout(_refreshTimer);
   _refreshTimer=setTimeout(async()=>{
     try{
@@ -1310,7 +1318,6 @@ function mbc(e){if(e.target===document.getElementById('mbg'))closeModal();}
 // ─── INIT ──────────────────────────────────────────────────────
 setTheme('all');applyI18n();reqGeo();loadAll();
 </script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
 </body>
 </html>
