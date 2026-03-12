@@ -1045,7 +1045,7 @@ async function fPDC(){
     })).filter(e=>e.lat!==0);
   }catch{return[];}
 }
-function loadAll(force=false){
+async function loadAll(force=false){
   if(isLoading&&!force)return;
   isLoading=true;
   initPipe();
