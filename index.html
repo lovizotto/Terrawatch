@@ -413,6 +413,13 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
     </div>
   </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 // ─── TYPE CONFIG ───────────────────────────────────────────────
 const T={
@@ -736,54 +743,275 @@ function iCo(){return`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.
 <circle cx="38" cy="5" r="1" fill="#AADDFF" opacity=".5"><animate attributeName="cy" values="5;40" dur="3.5s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>
 <circle cx="6" cy="22" r="1.3" fill="#88BBDD" opacity=".5"><animate attributeName="cy" values="22;48" dur="3s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="3s" begin="2s" repeatCount="indefinite"/></circle>
 </svg>`}
-// ─── CANVAS ────────────────────────────────────────────────────
-const bgc=document.getElementById('bgc'),ctx=bgc.getContext('2d');
-let parts=[],pmode='stars',tBg={...BGA},cBg={c1:BGA.c1,c2:BGA.c2},lt=0;
-function rsz(){bgc.width=bgc.offsetWidth;bgc.height=bgc.offsetHeight;}
-window.addEventListener('resize',()=>{rsz();ipts();});rsz();
-function h2r(h){return{r:parseInt(h.slice(1,3),16),g:parseInt(h.slice(3,5),16),b:parseInt(h.slice(5,7),16)}}
-function lc(a,b,t){const ca=h2r(a),cb=h2r(b);return`rgb(${~~(ca.r+(cb.r-ca.r)*t)},${~~(ca.g+(cb.g-ca.g)*t)},${~~(ca.b+(cb.b-ca.b)*t)})`}
-class Pt{
-  constructor(m,c){this.m=m;this.c=c||'#4060CC';this.rs();}
-  rs(){const W=bgc.width,H=bgc.height;
-    if(this.m==='ember'||this.m==='heat'){this.x=W*.2+Math.random()*W*.6;this.y=H+5;this.vx=(Math.random()-.5)*1.8;this.vy=-(0.8+Math.random()*2.8);this.r=.7+Math.random()*2;this.lf=1;this.dc=.004+Math.random()*.007;}
-    else if(this.m==='wind'||this.m==='wave'){this.x=Math.random()<.5?-10:W+10;this.y=Math.random()*H;this.vx=2.2*(this.x<0?1:-1);this.vy=(Math.random()-.5)*.6;this.r=.5+Math.random()*1.6;this.lf=1;this.dc=.003+Math.random()*.005;}
-    else if(this.m==='lightning'){this.x=Math.random()*W;this.y=0;this.vx=(Math.random()-.5)*.4;this.vy=.5+Math.random()*1.8;this.r=.4+Math.random();this.lf=Math.random();this.dc=.009+Math.random()*.013;}
-    else if(this.m==='snow'){this.x=Math.random()*W;this.y=-5;this.vx=(Math.random()-.5)*.8;this.vy=.5+Math.random()*1.2;this.r=.6+Math.random()*2;this.lf=1;this.dc=.002+Math.random()*.004;}
-    else{this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.07;this.vy=(Math.random()-.5)*.07;this.r=.3+Math.random()*1.1;this.lf=Math.random();this.dc=.0008+Math.random()*.0018;}
+// ─── THREE.JS BACKGROUND ─────────────────────────────────────
+const bgc = document.getElementById('bgc');
+let _threeInited = false;
+
+function initThreeBG() {
+  if (_threeInited || !window.THREE || !THREE.EffectComposer) return;
+  _threeInited = true;
+
+  const renderer = new THREE.WebGLRenderer({canvas: bgc, antialias: false, alpha: false, powerPreference: 'default'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ReinhardToneMapping;
+  renderer.toneMappingExposure = 1.4;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
+  const scene = new THREE.Scene();
+  const cam = new THREE.PerspectiveCamera(55, 1, 0.01, 50);
+  cam.position.set(0, 0, 3.5);
+
+  function doResize() {
+    const W = bgc.offsetWidth, H = bgc.offsetHeight;
+    renderer.setSize(W, H);
+    composer.setSize(W, H);
+    bloomPass.resolution.set(W, H);
+    cam.aspect = W / H;
+    cam.updateProjectionMatrix();
+    causticU.res.value.set(W, H);
   }
-  upd(){this.x+=this.vx;this.y+=this.vy;this.lf-=this.dc;
-    if(this.m==='ember'||this.m==='heat')this.vx+=(Math.random()-.5)*.14;
-    if(this.m==='snow')this.vx+=Math.sin(Date.now()*.001+this.y)*.04;
-    if(this.lf<=0)this.rs();}
-  drw(){const rgb=h2r(this.c),a=this.lf*.9;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${a})`;ctx.fill();if(this.r>1){ctx.beginPath();ctx.arc(this.x,this.y,this.r*2.5,0,Math.PI*2);ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${a*.1})`;ctx.fill();}}
+  window.addEventListener('resize', doResize);
+
+  // ── GLSL snippets ──────────────────────────────────────────
+  const VERT = `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+
+  // ── Caustic material ──────────────────────────────────────
+  const causticU = {
+    time:   {value: 0.0},
+    colA:   {value: new THREE.Color(0x020208)},
+    colB:   {value: new THREE.Color(0x1a0500)},
+    accent: {value: new THREE.Color(0x3040a8)},
+    fade:   {value: 0.0},
+    res:    {value: new THREE.Vector2(800, 600)},
+  };
+
+  const causticMat = new THREE.ShaderMaterial({
+    uniforms: causticU,
+    vertexShader: VERT,
+    fragmentShader: `
+      precision highp float;
+      uniform float time;
+      uniform vec3 colA, colB, accent;
+      uniform float fade;
+      uniform vec2 res;
+      varying vec2 vUv;
+
+      vec2 hash2(vec2 p){
+        p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));
+        return fract(sin(p)*43758.5453);
+      }
+
+      // Worley / Voronoi — bright at cell centers converging
+      float worley(vec2 p, float spd){
+        vec2 i=floor(p), f=fract(p);
+        float md=8.;
+        for(int x=-2;x<=2;x++) for(int y=-2;y<=2;y++){
+          vec2 nb=vec2(float(x),float(y));
+          vec2 pt=hash2(i+nb);
+          pt=.5+.48*sin(spd+6.2831*pt);
+          float d=length(nb+pt-f);
+          md=min(md,d);
+        }
+        return md;
+      }
+
+      // FBM for depth / soft bg noise
+      float fbm(vec2 p){
+        float v=0., a=.5;
+        for(int i=0;i<4;i++){
+          v+=a*fract(sin(dot(p,vec2(127.1+float(i)*31.,311.7+float(i)*17.)))*43758.5453);
+          p*=2.02; a*=.5;
+        }
+        return v;
+      }
+
+      void main(){
+        vec2 uv = vUv;
+        float ar = res.x/res.y;
+        vec2 suv = (uv-.5)*vec2(ar,1.)*4.;
+
+        float t = time;
+
+        // Three caustic layers, staggered speed & scale
+        float c1 = worley(suv*1.0,  t*0.55);
+        float c2 = worley(suv*1.55 + vec2(1.3,2.1), t*0.35);
+        float c3 = worley(suv*0.72 + vec2(-2.5,1.7), t*0.70);
+
+        // Caustic = sharp bright lines at Voronoi edges
+        float caus = (1.-smoothstep(0.0,.22,c1))*1.0
+                   + (1.-smoothstep(0.0,.18,c2))*0.6
+                   + (1.-smoothstep(0.0,.14,c3))*0.4;
+        caus = clamp(caus, 0., 1.);
+        caus = pow(caus, 1.6);
+
+        // Soft background FBM
+        float bg = fbm(suv*0.4 + t*0.04)*0.35;
+
+        // Vignette
+        float vig = 1.-smoothstep(.3, 1.1, length(uv-.5)*2.);
+
+        // Final color
+        vec3 col = colA;
+        col = mix(col, colA*2., bg*vig);          // soft bg lift
+        col += accent * caus * 1.8 * vig;          // caustic in accent color
+        col += colB * caus * 0.6 * vig;            // plus warm tint
+
+        // Caustic edge glow (bloom source)
+        col += accent * pow(caus, 3.) * 3.0 * vig;
+
+        gl_FragColor = vec4(col, fade * vig);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+  });
+  const causticMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 7), causticMat);
+  causticMesh.position.z = -0.5;
+  scene.add(causticMesh);
+
+  // ── Glass planes ─────────────────────────────────────────
+  const glassVertSrc = `
+    varying vec3 vNorm; varying vec3 vView; varying vec2 vUv;
+    void main(){
+      vUv=uv;
+      vec4 mv=modelViewMatrix*vec4(position,1.);
+      vView=-mv.xyz;
+      vNorm=normalMatrix*normal;
+      gl_Position=projectionMatrix*mv;
+    }
+  `;
+  const glassFragSrc = `
+    precision highp float;
+    uniform float time; uniform vec3 tint; uniform float fade; uniform float idx;
+    varying vec3 vNorm; varying vec3 vView; varying vec2 vUv;
+    void main(){
+      vec3 n=normalize(vNorm), v=normalize(vView);
+      float fr=pow(1.-max(dot(n,v),0.),.5*2.5+.5);
+
+      // Specular
+      vec3 l1=normalize(vec3(.6,1.,.8));
+      vec3 l2=normalize(vec3(-.5,-.8,.4));
+      float sp1=pow(max(dot(reflect(-l1,n),v),0.),48.);
+      float sp2=pow(max(dot(reflect(-l2,n),v),0.),32.);
+
+      // Internal caustic shimmer (refractive caustic on glass surface)
+      float ripple = sin(vUv.x*14.+time*.5+idx*1.7)*sin(vUv.y*10.-time*.4+idx);
+      float cshift  = sin(vUv.x*22.-time*.8+idx*2.3)*sin(vUv.y*18.+time*.6);
+      float causticGlass = pow(max(ripple*.5+.5,0.),3.) * pow(max(cshift*.5+.5,0.),3.);
+      causticGlass *= .4;
+
+      // Reflection streak (env approximation)
+      float streak = pow(max(sin(vUv.x*3.14159),0.)*fr,2.) * .25;
+
+      vec3 col = tint*(fr*.55 + sp1*.6 + sp2*.25 + causticGlass + streak);
+      col += vec3(.8,.9,1.)*sp1*.4;   // white specular
+
+      float a = fade*(fr*.6 + sp1*.5 + sp2*.2 + causticGlass*.7 + .02);
+      gl_FragColor = vec4(col, clamp(a,0.,0.92));
+    }
+  `;
+
+  const gpDefs = [
+    {p:[-0.9, 0.25, 0.4], r:[-0.18, 0.42, 0.10], s:[2.0, 1.3]},
+    {p:[ 0.8,-0.15, 0.2], r:[ 0.12,-0.50,-0.14], s:[1.5, 0.95]},
+    {p:[ 0.0,-0.55, 0.6], r:[-0.38, 0.08, 0.21], s:[2.2, 0.65]},
+    {p:[-0.2, 0.65,-0.3], r:[ 0.28, 0.16,-0.32], s:[1.3, 0.85]},
+    {p:[ 0.5, 0.45, 0.0], r:[-0.08,-0.28, 0.08], s:[1.0, 1.10]},
+  ];
+
+  const glassPlanes = gpDefs.map((d, i) => {
+    const u = {
+      time:  {value: 0.0},
+      tint:  {value: new THREE.Color(0x5080ff)},
+      fade:  {value: 0.0},
+      idx:   {value: parseFloat(i)},
+    };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: u, vertexShader: glassVertSrc, fragmentShader: glassFragSrc,
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(d.s[0], d.s[1]), mat);
+    mesh.position.set(...d.p);
+    mesh.rotation.set(...d.r);
+    scene.add(mesh);
+    return {mesh, u, base: d};
+  });
+
+  // ── Post-processing ──────────────────────────────────────
+  const composer = new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene, cam));
+  const bloomPass = new THREE.UnrealBloomPass(
+    new THREE.Vector2(800, 600), 1.05, 0.55, 0.24
+  );
+  composer.addPass(bloomPass);
+
+  // ── Theme state ──────────────────────────────────────────
+  let targetA  = new THREE.Color(0x020208);
+  let targetB  = new THREE.Color(0x1a0500);
+  let targetAc = new THREE.Color(0x3040a8);
+  let targetGT = new THREE.Color(0x5080ff);
+  let fadeTgt  = 0.0;
+  let fadeGlassTgt = 0.0;
+
+  // Call this from setTheme
+  window._threeSetTheme = function(type) {
+    const bg  = (type==='all') ? BGA : (T[type]?.bg || BGA);
+    const acc = (type==='all') ? '#5080F0' : (T[type]?.c || '#5080F0');
+    targetA  = new THREE.Color(bg.c1);
+    targetB  = new THREE.Color(bg.c2);
+    targetAc = new THREE.Color(bg.p);
+    targetGT = new THREE.Color(acc);
+    // Fade out → fade in
+    fadeTgt      = 0.0;
+    fadeGlassTgt = 0.0;
+    setTimeout(() => { fadeTgt = 0.95; fadeGlassTgt = 1.0; }, 520);
+  };
+
+  // ── First resize ─────────────────────────────────────────
+  doResize();
+
+  // ── Animate ──────────────────────────────────────────────
+  const clock = new THREE.Clock();
+  (function loop() {
+    requestAnimationFrame(loop);
+    const t = clock.getElapsedTime();
+
+    // Lerp colors
+    causticU.colA.value.lerp(targetA,  0.025);
+    causticU.colB.value.lerp(targetB,  0.025);
+    causticU.accent.value.lerp(targetAc, 0.025);
+    causticU.time.value  = t;
+    causticU.fade.value += (fadeTgt - causticU.fade.value) * 0.045;
+
+    glassPlanes.forEach((gp, i) => {
+      gp.u.time.value = t;
+      gp.u.tint.value.lerp(targetGT, 0.028);
+      gp.u.fade.value += (fadeGlassTgt - gp.u.fade.value) * 0.038;
+      // Float
+      gp.mesh.position.y = gp.base.p[1] + Math.sin(t * 0.28 + i * 1.57) * 0.055;
+      gp.mesh.rotation.z = gp.base.r[2] + Math.sin(t * 0.18 + i * 1.10) * 0.018;
+    });
+
+    composer.render();
+  })();
+
+  // Trigger initial fade-in
+  setTimeout(() => { fadeTgt = 0.95; fadeGlassTgt = 1.0; }, 100);
 }
-function ipts(){
-  const W=bgc.width,H=bgc.height,cnt=pmode==='stars'?120:pmode==='ember'||pmode==='heat'?65:pmode==='snow'?90:pmode==='lightning'?42:88;
-  parts=[];
-  for(let i=0;i<cnt;i++){const p=new Pt(pmode,tBg.p);if(pmode==='stars'||pmode==='lightning'){p.x=Math.random()*W;p.y=Math.random()*H;p.lf=Math.random();}else if(pmode==='snow')p.y=Math.random()*H;else p.lf=Math.random();parts.push(p);}
-}
-function dbg(){
-  lt=Math.min(lt+.015,1);
-  const c1=lc(cBg.c1,tBg.c1,lt),c2=lc(cBg.c2,tBg.c2,lt);
-  if(lt>=.99)cBg={c1:tBg.c1,c2:tBg.c2};
-  const W=bgc.width,H=bgc.height;
-  const g=ctx.createRadialGradient(W*.5,H*.3,0,W*.5,H*.55,H*.95);
-  g.addColorStop(0,c2);g.addColorStop(1,c1);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  const v=ctx.createRadialGradient(W/2,H/2,H*.18,W/2,H/2,H*.92);
-  v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(0,0,0,.52)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
-}
-(function anm(){requestAnimationFrame(anm);dbg();parts.forEach(p=>{p.upd();p.drw();});})();
-ipts();
+
+// Attempt init once scripts likely loaded
+window.addEventListener('load', () => setTimeout(initThreeBG, 80));
 
 function setTheme(type){
-  const bg=(type==='all'?BGA:(T[type]?.bg||BGA));
-  tBg={c1:bg.c1,c2:bg.c2,p:bg.p,m:bg.m};lt=0;pmode=bg.m;ipts();
+  if (window._threeSetTheme) window._threeSetTheme(type);
   const acc=type==='all'?'#5080F0':(T[type]?.c||'#5080F0');
   document.getElementById('bico').style.cssText=`background:linear-gradient(145deg,${acc},${acc}88);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 4px 12px ${acc}55`;
   document.querySelector('#bnm span').style.color=acc;
   document.documentElement.style.setProperty('--acc',acc);
 }
+
+
 
 // ─── GEO ───────────────────────────────────────────────────────
 let uGeo=null;
