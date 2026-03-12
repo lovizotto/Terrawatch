@@ -590,6 +590,90 @@ const STATIC_EVENTS=[
   {id:'sa_bolivia_flood',type:'flood',name:'Enchentes — Beni, Bolívia',location:'Departamento Beni, Bolívia',lat:-13.0,lng:-65.5,severity:'high',
    description:'Região do Beni, na Amazônia boliviana, sofre inundações sazonais graves em 2026. Comunidades ribeirinhas isoladas, colheitas perdidas.',
    time:'recente',source:'VIDECI Bolivia / OCHA',sourceUrl:'https://reliefweb.int'},
+  // ── COLÔMBIA ──────────────────────────────────────────────────
+  {id:'col_cordoba',type:'flood',name:'Enchente Nacional — Córdoba, Colômbia',location:'Córdoba / Costa Caribe, Colômbia',lat:8.7,lng:-75.9,severity:'critical',
+   description:'Emergência nacional fev/2026: 44 mortos, 72.000 famílias afetadas, 16.300 casas destruídas em 16 departamentos. Rio Sinú transbordou — 80% de Córdoba submerso. Petro declarou emergência por 30 dias.',
+   time:'há 4sem',source:'UNGRD Colômbia / Copernicus EMSR865',sourceUrl:'https://mapping.emergency.copernicus.eu/news/flood-in-colombia-emsr865/'},
+  // ── MADAGASCAR / MOÇAMBIQUE ────────────────────────────────────
+  {id:'af_gezani_mad',type:'cyclone',name:'Ciclone Gezani — Madagascar',location:'Toamasina, Madagascar',lat:-18.16,lng:49.39,severity:'critical',
+   description:'Ciclone Cat.3 em 10/fev: rajadas de 250km/h. 59 mortos, 804 feridos, 416.000 afetados. 75% de Toamasina (400.000 hab) destruída. Emergência nacional + US$3M da ONU. Veio 11 dias após o Ciclone Fytia.',
+   time:'há 4sem',source:'BNGRC / UNICEF Madagascar',sourceUrl:'https://www.unicef.org/madagascar/en/reports/cyclones-fytia-gezani-response-plan'},
+  {id:'af_gezani_moz',type:'cyclone',name:'Ciclone Gezani — Moçambique',location:'Inhambane, Moçambique',lat:-23.87,lng:35.38,severity:'high',
+   description:'Gezani atingiu Inhambane com 215km/h após Madagascar: 4 mortos, 13.000 sem luz. Moçambique ainda em recuperação das enchentes de jan/2026 que afetaram 700.000 pessoas.',
+   time:'há 4sem',source:'INAM Moçambique / WMO',sourceUrl:'https://wmo.int/media/news/tropical-cyclone-gezani-hits-madagascar-and-threatens-mozambique'},
+  // ── DRC / CONGO ────────────────────────────────────────────────
+  {id:'af_drc_rubaya',type:'flood',name:'Deslizamentos Letais — Rubaya, DRC',location:'Masisi, Kivu do Norte, DRC',lat:-1.47,lng:28.99,severity:'critical',
+   description:'Dois deslizamentos em 3 e 6/mar na mina Rubaya: ~500 mortos no total (300 não confirmados no 2º evento). Chuvas torrenciais contínuas. Área de mineração artesanal de coltan sem infraestrutura de proteção.',
+   time:'há 6d',source:'GDACS / OCHA',sourceUrl:'https://gdacs.org/'},
+  // ── AFRICA ORIENTAL ────────────────────────────────────────────
+  {id:'af_somalia',type:'flood',name:'Enchentes — Somália',location:'Sul da Somália',lat:2.0,lng:45.3,severity:'high',
+   description:'460.000+ pessoas afetadas por inundações desde início de 2026. Cólera ativa. La Niña eleva risco de novas chuvas. Somália entre os 10 piores crises humanitárias de 2026 segundo IRC.',
+   time:'recente',source:'OCHA Somalia / IRC',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
+  {id:'af_southsudan',type:'flood',name:'Enchentes — Sudão do Sul',location:'Planícies do Nilo, Sudão do Sul',lat:7.0,lng:30.5,severity:'high',
+   description:'6º ano consecutivo de enchentes graves: 900.000+ afetados em 2025. Cólera com 100.000+ casos. La Niña traz risco elevado de novas inundações em 2026. Entre as piores crises humanitárias do mundo.',
+   time:'recente',source:'IRC Emergency Watchlist 2026',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
+  // ── NORTE DA AFRICA ───────────────────────────────────────────
+  {id:'af_morocco',type:'flood',name:'Enchentes — Norte de Marrocos',location:'Ksar El Kébir, Marrocos',lat:34.5,lng:-5.9,severity:'medium',
+   description:'Chuvas intensas causaram enchentes no norte de Marrocos em fev/2026, com mortes e feridos. Região impactada pela série de tempestades atlânticas que varreram a Península Ibérica.',
+   time:'há 3sem',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
+  {id:'af_algeria',type:'flood',name:'Enchentes — Relizane, Argélia',location:'Relizane, Argélia',lat:35.7,lng:0.56,severity:'medium',
+   description:'Inundações no norte da Argélia (Relizane) com mortes em fev/2026, durante mesma série de tempestades mediterrâneas que afetou Marrocos, Espanha e Portugal.',
+   time:'há 3sem',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
+  {id:'af_angola_drought',type:'heat',name:'Seca Severa — Angola',location:'Angola Central',lat:-12.5,lng:17.0,severity:'high',
+   description:'Seca persistente desde out/2025 no centro e oeste de Angola. Déficits severos de chuva resultando em condições de estiagem aguda. Segurança alimentar comprometida em 2026 segundo NOAA.',
+   time:'recente',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
+  // ── ILHAS DO PACÍFICO ─────────────────────────────────────────
+  {id:'pac_solomon_eq',type:'earthquake',name:'Sismo M6.7 — Ilhas Salomão',location:'Kirakira, Ilhas Salomão',lat:-10.4,lng:162.0,severity:'high',
+   description:'Terremoto M6.7 atingiu Kirakira em 9/mar/2026. Região sísmica extrema: 60-70 sismos por ano. Alertas de tsunami emitidos, danos estruturais reportados.',
+   time:'há 3d',source:'GNS Science / USGS',sourceUrl:'https://earthquake.usgs.gov'},
+  {id:'pac_vanuatu',type:'earthquake',name:'Recuperação — Vanuatu',location:'Port Vila, Vanuatu',lat:-17.73,lng:168.32,severity:'medium',
+   description:'Recuperação em andamento do terremoto M7.3 de 17/dez/2024 (14 mortos). Sem água potável, casas destruídas. Cruz Vermelha Vanuatu com resposta ativa em mar/2026.',
+   time:'recente',source:'RNZ / Pacific Humanitarian Team',sourceUrl:'https://www.rnz.co.nz/international/pacific-news'},
+  // ── INDONÉSIA ADICIONAL ───────────────────────────────────────
+  {id:'id_nunukan',type:'flood',name:'Enchente — Nunukan, Bornéu',location:'Nunukan, Kalimantan, Indonésia',lat:4.13,lng:117.67,severity:'high',
+   description:'Enchente 1-3m de profundidade em fev/2026: 12.500 pessoas afetadas em 10 sub-distritos. 17 escolas, 12 postos de saúde e 31 repartições danificadas. Estado de emergência declarado.',
+   time:'há 2sem',source:'BNPB / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-23-february-1-march-2026/'},
+  {id:'id_lewotobi',type:'volcano',name:'Lewotobi — Flores, Indonésia',location:'Flores, Indonésia',lat:-8.54,lng:122.78,severity:'medium',
+   description:'Lewotobi Laki-laki em alerta nível II (Waspada) com atividade persistente em fev-mar/2026. Emissões de cinzas e tremores vulcânicos. Comunidades em raio de 2km evacuadas.',
+   time:'há 1sem',source:'PVMBG Indonésia',sourceUrl:'https://magma.vsi.esdm.go.id'},
+  {id:'id_marapi',type:'volcano',name:'Marapi — Sumatra, Indonésia',location:'Sumatra Ocidental, Indonésia',lat:-0.38,lng:100.47,severity:'medium',
+   description:'Monte Marapi em alerta nível II com erupções e emissões de cinzas nas semanas 9 e 10 de 2026. Proibição de atividades em raio de 3km da cúpula. Monitored por PVMBG.',
+   time:'há 1sem',source:'PVMBG / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
+  // ── FILIPINAS ─────────────────────────────────────────────────
+  {id:'ph_taal',type:'volcano',name:'Taal — Alerta Nível 1',location:'Batangas, Filipinas',lat:14.0,lng:121.0,severity:'medium',
+   description:'Taal em alerta nível 1 com tremores vulcânicos, emissão de vapor e enxofre. PHIVOLCS monitora continuamente em mar/2026. Comunidades no lago em atenção.',
+   time:'há 1sem',source:'PHIVOLCS',sourceUrl:'https://www.phivolcs.dost.gov.ph'},
+  // ── SUDESTE ASIÁTICO ──────────────────────────────────────────
+  {id:'as_vietnam',type:'storm',name:'Tempestades — Quang Ngai, Vietnã',location:'Quang Ngai, Vietnã',lat:15.12,lng:108.79,severity:'medium',
+   description:'Tempestades e ventos fortes em Quang Ngai na semana de 2-8/mar/2026. VDDMA reportou danos em estruturas costeiras. La Niña mantém precipitação acima do normal no Sudeste Asiático.',
+   time:'há 4d',source:'VDDMA Vietnã / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
+  {id:'as_thailand',type:'storm',name:'Ventos Fortes — Tailândia',location:'Nakhon Ratchasima, Tailândia',lat:14.98,lng:102.1,severity:'medium',
+   description:'Tempestades e ventos fortes em Nakhon Ratchasima, Sisaket e Saraburi em 2-8/mar. Danos materiais reportados pelo DDPM. Tailândia ainda em recuperação do sismo de Myanmar (mar/2025).',
+   time:'há 4d',source:'DDPM Tailândia / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
+  // ── MYANMAR ────────────────────────────────────────────────────
+  {id:'as_myanmar',type:'earthquake',name:'Recuperação Sismo M7.7 — Myanmar',location:'Mandalay, Myanmar',lat:21.97,lng:96.08,severity:'critical',
+   description:'Sismo M7.7 de 28/mar/2025: 3.768 mortos, 22 milhões em necessidade humanitária. Em mar/2026: mais de 140 réplicas, infraestrutura destruída, reconstrução impedida por conflito civil ativo.',
+   time:'recente',source:'OCHA Myanmar',sourceUrl:'https://news.un.org/en/story/2025/04/1162401'},
+  // ── IRÃ ───────────────────────────────────────────────────────
+  {id:'me_iran',type:'earthquake',name:'Sismos Contínuos — Irã',location:'Fárs / Golfo Pérsico, Irã',lat:27.5,lng:52.5,severity:'medium',
+   description:'87 sismos M2.5+ no Irã nos últimos 30 dias. Maior: M4.9 em 13/fev perto de Mohr. Irã em zona de alta atividade tectônica entre placas Arábica e Eurasiática — histórico de sismos destrutivos.',
+   time:'recente',source:'VolcanoDiscovery / IRSC',sourceUrl:'https://www.volcanodiscovery.com/earthquakes/iran.html'},
+  // ── MONGÓLIA ──────────────────────────────────────────────────
+  {id:'as_mongolia',type:'cold',name:'Dzud Severo — Mongólia',location:'Mongólia Central',lat:46.86,lng:103.85,severity:'high',
+   description:'Dzud (desastre endêmico da Mongólia) em 2026: seca de verão + frio extremo e neve no inverno matam gado em massa. Pastores nômades perdem meios de vida. ReliefWeb reporta crise alimentar em curso.',
+   time:'recente',source:'ReliefWeb / Mongolia NDRA',sourceUrl:'https://reliefweb.int/disasters'},
+  // ── HAITI ─────────────────────────────────────────────────────
+  {id:'am_haiti',type:'flood',name:'Crise Total — Haiti',location:'Porto Príncipe, Haiti',lat:18.54,lng:-72.34,severity:'critical',
+   description:'Mandato do Conselho Presidencial expirou em fev/2026 em colapso total. Gangues controlam quase toda a capital. 6ª enchente severa consecutiva em 2025 afetou 900.000. Cólera com 100.000+ casos. Pior crise humanitária das Américas.',
+   time:'recente',source:'IRC Emergency Watchlist 2026',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
+  // ── SRI LANKA ─────────────────────────────────────────────────
+  {id:'as_srilanka',type:'cyclone',name:'Recuperação Ciclone Ditwah — Sri Lanka',location:'Sri Lanka',lat:7.87,lng:80.77,severity:'high',
+   description:'Ciclone Ditwah (28/nov/2025): 1,8 mi de pessoas afetadas, 1,1 mi sem água limpa, 600.000 crianças sem escola. Recuperação humanitária em curso em mar/2026 pelo UNICEF e parceiros.',
+   time:'há 3mes',source:'UNICEF South Asia',sourceUrl:'https://www.unicef.org/appeals/rosa'},
+  // ── NOVA ZELÂNDIA ─────────────────────────────────────────────
+  {id:'pac_nz_kermadec',type:'earthquake',name:'Sismicidade — Kermadec, Nova Zelândia',location:'Trench Kermadec, NZ',lat:-30.0,lng:-178.5,severity:'medium',
+   description:'Zona Kermadec-Tonga: uma das mais sísmicas do mundo. 40 sismos M7.5+ desde 1900. GeoNet NZ monitora atividade contínua. Potencial de tsunamis para ilhas baixas do Pacífico.',
+   time:'recente',source:'GeoNet New Zealand',sourceUrl:'https://www.geonet.org.nz'},
 ];
 
 // Merge
