@@ -758,396 +758,81 @@ function relT(ms){const d=(Date.now()-ms)/1000;if(d<60)return'agora';if(d<3600)r
 setInterval(()=>{const e=document.getElementById('clk');if(e)e.textContent=new Date().toTimeString().slice(0,5);},1000);
 
 // ─── FETCH FUNCTIONS ───────────────────────────────────────────
-async function fUSGS(){setSrc('usgs','l');try{const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson'),d=await r.json();const res=d.features.slice(0,60).map(f=>{const p=f.properties,[lng,lat,dep]=f.geometry.coordinates,mag=p.mag||0;return{id:'u_'+f.id,type:'earthquake',name:`Terremoto M${mag.toFixed(1)}`,location:p.place||'Oceano',lat,lng,severity:mag>=7?'critical':mag>=6?'high':mag>=5.5?'medium':'low',description:`M${mag.toFixed(1)} a ${~~(dep||0)}km de profundidade.${p.tsunami?' ⚠ Alerta de tsunami.':''}`,time:relT(p.time),source:'USGS',sourceUrl:p.url,mag:mag.toFixed(1),depth:`${~~(dep||0)}km`};});setSrc('usgs','ok');return res;}catch{setSrc('usgs','error');return[];}}
+// ─── WORKER-BASED DATA PIPELINE ─────────────────────────────
+let _worker = null;
+let _workerReady = false;
 
-async function fEMSC(){setSrc('emsc','l');try{const r=await fetch('https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=35&minmagnitude=4.5&orderby=time'),d=await r.json();const res=(d.features||[]).map(f=>{const p=f.properties,[lng,lat,dep]=f.geometry.coordinates,mag=p.mag||0;return{id:'e_'+f.id,type:'earthquake',name:`Sismo M${mag.toFixed(1)}`,location:p.flynn_region||'Europa/Mediterrâneo',lat,lng,severity:mag>=7?'critical':mag>=6?'high':mag>=5.5?'medium':'low',description:`M${mag.toFixed(1)} – Centro Sismológico Europeu.`,time:relT(new Date(p.time).getTime()),source:'EMSC',sourceUrl:`https://www.emsc-csem.org/Earthquake/earthquake.php?id=${f.id}`,mag:mag.toFixed(1),depth:`${~~(dep||0)}km`};});setSrc('emsc','ok');return res;}catch{setSrc('emsc','error');return[];}}
-
-async function fIRIS(){setSrc('iris','l');try{const r=await fetch('https://service.iris.edu/fdsnws/event/1/query?format=geojson&minmagnitude=5.0&limit=25&orderby=time'),d=await r.json();const res=(d.features||[]).map(f=>{const p=f.properties,[lng,lat,dep]=f.geometry.coordinates,mag=p.mag||0;return{id:'i_'+f.id,type:'earthquake',name:`Sismo M${mag.toFixed(1)}`,location:p.place||'Epicentro',lat,lng,severity:mag>=7?'critical':mag>=6?'high':'medium',description:`M${mag.toFixed(1)} pela rede global IRIS/FDSN.`,time:relT(new Date(p.time).getTime()),source:'IRIS',sourceUrl:'https://ds.iris.edu',mag:mag.toFixed(1),depth:`${~~(dep||0)}km`};});setSrc('iris','ok');return res;}catch{setSrc('iris','error');return[];}}
-
-async function fGeoNet(){setSrc('geonet','l');try{const r=await fetch('https://api.geonet.org.nz/quake?MMI=3'),d=await r.json();const res=(d.features||[]).slice(0,20).map(f=>{const p=f.properties,[lng,lat]=f.geometry.coordinates,mag=p.magnitude||0;return{id:'gn_'+f.id,type:'earthquake',name:`Sismo M${mag.toFixed(1)} NZ`,location:p.locality||'Nova Zelândia',lat,lng,severity:mag>=6?'high':mag>=5?'medium':'low',description:`M${mag.toFixed(1)}, ${p.depth||0}km. Nova Zelândia.`,time:relT(new Date(p.time).getTime()),source:'GeoNet',sourceUrl:`https://www.geonet.org.nz/earthquake/${f.id}`,mag:mag.toFixed(1),depth:`${p.depth||0}km`};});setSrc('geonet','ok');return res;}catch{setSrc('geonet','error');return[];}}
-
-async function fEONET(){setSrc('eonet','l');try{const r=await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=80&days=90'),d=await r.json();const EM={'Volcanoes':'volcano','Severe Storms':'storm','Floods':'flood','Tropical Cyclone':'hurricane','Tropical Storm':'storm','Earthquakes':'earthquake','Wildfires':'heat'};const res=[];(d.events||[]).forEach(ev=>{const cat=ev.categories?.[0]?.title||'';let type=EM[cat];if(!type)return;const t=ev.title.toLowerCase();if(t.includes('cyclone')||t.includes('typhoon'))type='cyclone';if(t.includes('hurric'))type='hurricane';if(t.includes('tsunami'))type='tsunami';const geo=ev.geometry?.[0];if(!geo)return;const[lng,lat]=geo.coordinates;res.push({id:'en_'+ev.id,type,name:ev.title,location:ev.title,lat,lng,severity:t.includes('major')||t.includes('intense')||t.includes('cat')?'high':'medium',description:`NASA EONET: ${cat}.`,time:relT(new Date(geo.date||Date.now()).getTime()),source:ev.sources?.[0]?.id||'NASA',sourceUrl:ev.sources?.[0]?.url||'https://eonet.gsfc.nasa.gov'});});setSrc('eonet','ok');return res;}catch{setSrc('eonet','error');return[];}}
-
-async function fNOAA(){setSrc('noaa','l');try{const r=await fetch('https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe&limit=30'),d=await r.json();const res=[];(d.features||[]).forEach(f=>{const p=f.properties,ev=(p.event||'').toLowerCase();let type='storm';if(ev.includes('flood'))type='flood';if(ev.includes('heat'))type='heat';if(ev.includes('blizzard')||ev.includes('winter')||ev.includes('freeze')||ev.includes('cold'))type='cold';if(ev.includes('hurric'))type='hurricane';if(ev.includes('tsunami'))type='tsunami';const sev=p.severity==='Extreme'?'critical':'high';let lat=39,lng=-97;const geo=f.geometry;if(geo?.type==='Point')[lng,lat]=geo.coordinates;res.push({id:'nws_'+f.id,type,name:p.event||'Alerta NWS',location:p.areaDesc||'EUA',lat,lng,severity:sev,description:p.headline||'Alerta emitido pelo NOAA/NWS.',time:relT(new Date(p.sent||Date.now()).getTime()),source:'NOAA/NWS',sourceUrl:'https://alerts.weather.gov/'});});setSrc('noaa','ok');return res;}catch{setSrc('noaa','error');return[];}}
-
-async function fRelief(){setSrc('relief','l');try{const r=await fetch('https://api.reliefweb.int/v1/disasters?appname=terrawatch&filter[field]=status&filter[value]=ongoing&limit=25&fields[include][]=name&fields[include][]=primary_type&fields[include][]=country&fields[include][]=url_alias'),d=await r.json();const TM={'Earthquake':'earthquake','Volcano':'volcano','Flood':'flood','Cyclone':'cyclone','Hurricane':'hurricane','Tsunami':'tsunami','Drought':'heat','Cold Wave':'cold','Heat Wave':'heat','Storm':'storm'};const CC={'Japan':[36,138],'Indonesia':[-5,120],'Philippines':[12,122],'Haiti':[19,-72],'Pakistan':[30,70],'Bangladesh':[23,90],'Nepal':[28,84],'Chile':[-33,-70],'Peru':[-12,-77],'Turkey':[39,35],'India':[20,78],'China':[35,105],'USA':[38,-97],'Australia':[-25,133],'New Zealand':[-41,174],'Italy':[42,12],'Colombia':[4,-74],'Ethiopia':[9,40],'Mozambique':[-18,35],'Madagascar':[-18,47],'Brazil':[-15,-50],'Mexico':[19,-99],'Guatemala':[15,-90]};const res=[];(d.data||[]).forEach(ev=>{const pt=ev.fields?.primary_type?.name||'',type=TM[pt]||'storm',country=ev.fields?.country?.[0]?.name||'Global',coords=CC[country]||[0,20];res.push({id:'rw_'+ev.id,type,name:ev.fields?.name||'Desastre',location:country,lat:coords[0]+(Math.random()-.5)*3,lng:coords[1]+(Math.random()-.5)*3,severity:'high',description:`Desastre ativo – ReliefWeb/OCHA. Tipo: ${pt}.`,time:'recente',source:'ReliefWeb',sourceUrl:`https://reliefweb.int${ev.fields?.url_alias||''}`});});setSrc('relief','ok');return res;}catch{setSrc('relief','error');return[];}}
-
-async function fOpenMeteo(){setSrc('openmeteo','l');
-// spots: each has optional anomaly threshold override
-const spots=[
-  {lat:33.45,lng:-112.07,n:'Phoenix, EUA',hot:33},   // Phoenix — record March heat right now
-  {lat:34.05,lng:-118.24,n:'Los Angeles, EUA',hot:33}, // LA heatwave ~37°C forecast
-  {lat:36.17,lng:-115.14,n:'Las Vegas, EUA',hot:33},
-  {lat:36.75,lng:-108.9,n:'Four Corners, EUA',hot:33},
-  {lat:33,lng:44,n:'Bagdá, Iraque',hot:40},
-  {lat:24,lng:54,n:'Abu Dhabi, Emirados',hot:40},
-  {lat:40,lng:20,n:'Grécia',hot:38},
-  {lat:38,lng:-4,n:'Sevilha, Espanha',hot:38},
-  {lat:-35,lng:149,n:'Canberra, Austrália',hot:38},
-  {lat:65,lng:-18,n:'Islândia',cold:-15},
-  {lat:55,lng:37,n:'Moscou, Rússia',cold:-20},
-  {lat:44,lng:-110,n:'EUA Noroeste',cold:-18},
-  {lat:-15,lng:27,n:'Zâmbia',hot:40},
-  {lat:20,lng:76,n:'Índia Central',hot:40},
-  {lat:30,lng:120,n:'China Leste',hot:38},
-  {lat:-25,lng:133,n:'Austrália Central',hot:40},
-  {lat:60,lng:30,n:'São Petersburgo, Rússia',cold:-22},
-  {lat:62,lng:-150,n:'Alasca, EUA',cold:-25},
-];
-try{const res=[];await Promise.allSettled(spots.map(async h=>{try{const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${h.lat}&longitude=${h.lng}&current=temperature_2m,apparent_temperature&timezone=auto`),d=await r.json();const temp=d.current?.temperature_2m,feel=d.current?.apparent_temperature;if(temp===undefined)return;const hotThr=h.hot||38,coldThr=h.cold||-18;if(temp>=hotThr||feel>=hotThr+2)res.push({id:`ht_${h.lat}_${h.lng}`,type:'heat',name:`🌡 Calor Extremo — ${h.n}`,location:h.n,lat:h.lat,lng:h.lng,severity:temp>44?'critical':temp>40?'high':'medium',description:`${temp.toFixed(1)}°C agora (sensação ${feel?.toFixed(1)}°C). ${temp>43?'Risco à vida.':temp>38?'Alerta de calor ativo.':'Temperatura acima do normal.'}`,time:'agora',source:'Open-Meteo',sourceUrl:'https://open-meteo.com'});else if(temp<=coldThr||feel<=coldThr-3)res.push({id:`cl_${h.lat}_${h.lng}`,type:'cold',name:`🥶 Frio Extremo — ${h.n}`,location:h.n,lat:h.lat,lng:h.lng,severity:temp<-30?'critical':temp<-22?'high':'medium',description:`${temp.toFixed(1)}°C agora (sensação ${feel?.toFixed(1)}°C). ${temp<-28?'Risco extremo de hipotermia.':'Frio perigoso ativo.'}`,time:'agora',source:'Open-Meteo',sourceUrl:'https://open-meteo.com'});}catch{}}));setSrc('openmeteo','ok');return res;}catch{setSrc('openmeteo','error');return[];}}
-
-async function fFIRMS(){setSrc('firms','l');try{const r=await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&category=wildfires&limit=15'),d=await r.json();const res=(d.events||[]).map(ev=>{const geo=ev.geometry?.[0];if(!geo)return null;const[lng,lat]=geo.coordinates;return{id:'fi_'+ev.id,type:'heat',name:ev.title,location:ev.title,lat,lng,severity:'high',description:`Incêndio ativo – NASA FIRMS.`,time:relT(new Date(geo.date||Date.now()).getTime()),source:'NASA FIRMS',sourceUrl:ev.sources?.[0]?.url||'https://firms.modaps.eosdis.nasa.gov'};}).filter(Boolean);setSrc('firms','ok');return res;}catch{setSrc('firms','error');return[];}}
-
-// Claude AI parallel batches
-const AISYS=`Monitor global de desastres. Use web_search para eventos REAIS ativos AGORA. Retorne APENAS JSON puro sem markdown:
-[{"id":"X","type":"earthquake|volcano|hurricane|cyclone|storm|flood|tsunami|heat|cold","name":"Nome oficial","location":"Cidade, País","lat":0.0,"lng":0.0,"severity":"critical|high|medium|low","description":"1 frase em português","time":"há Xh","source":"Nome fonte","sourceUrl":"https://url"}]
-Somente eventos confirmados ativos. Máximo 12 por chamada. lat/lng precisos.`;
-
-async function fAI(ids,msg){ids.forEach(id=>setSrc(id,'l'));try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,tools:[{type:'web_search_20250305',name:'web_search'}],system:AISYS,messages:[{role:'user',content:msg}]})});const d=await r.json(),text=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(''),m=text.match(/\[[\s\S]*?\]/);if(m){ids.forEach(id=>setSrc(id,'ok'));return JSON.parse(m[0]);}throw 0;}catch{ids.forEach(id=>setSrc(id,'error'));return[];}}
-
-// ─── STATIC CONFIRMED EVENTS (verified via real sources, Mar 2026) ─
-const STATIC_EVENTS=[
-  // ── VULCÕES ATIVOS ──────────────────────────────────────────────
-  {id:'sv_kilauea',type:'volcano',name:'Kīlauea — Episódio 43',location:'Havaí, EUA',lat:19.421,lng:-155.288,severity:'critical',
-   description:'Erupção ep.43 em 10/mar: fontes de lava de 400m, tephra de 15cm em comunidades vizinhas. Alerta VERMELHO/WARNING. Pausa breve, ep.44 previsto em breve.',
-   time:'há 2d',source:'USGS HVO',sourceUrl:'https://www.usgs.gov/volcanoes/kilauea/volcano-updates'},
-  {id:'sv_greatsitkin',type:'volcano',name:'Great Sitkin — Lava Ativa',location:'Alasca, EUA',lat:52.076,lng:-176.11,severity:'high',
-   description:'Efusão lenta de lava no cratéra de cúpula, ativa desde julho/2021. Código de aviação LARANJA. Fluxos de lava preencheram a cratera.',
-   time:'há 1d',source:'AVO/USGS',sourceUrl:'https://www.usgs.gov/volcanoes/great-sitkin/volcano-updates'},
-  {id:'sv_sheveluch',type:'volcano',name:'Sheveluch — Domo Crescendo',location:'Kamchatka, Rússia',lat:56.654,lng:161.36,severity:'high',
-   description:'Novo domo de lava crescendo 2.400m acima do nível do mar — já ultrapassou o Molodoy Shiveluch. Plumas de cinzas a 9km, código LARANJA contínuo.',
-   time:'há 3d',source:'KVERT',sourceUrl:'https://www.volcanodiscovery.com'},
-  {id:'sv_piton',type:'volcano',name:'Piton de la Fournaise — Erupção',location:'Ilha Reunião, França',lat:-21.244,lng:55.708,severity:'medium',
-   description:'Erupção ativa na cratera sul Dolomieu. Fontes de lava de 20m, campo de lava atingiu Grandes Pentes. Fluxo a 1.725m de altitude.',
-   time:'há 1d',source:'OVPF',sourceUrl:'https://www.ipgp.fr/fr/ovpf/activite-du-piton-de-la-fournaise'},
-  {id:'sv_mayon',type:'volcano',name:'Mayon — Fluxos Ativos',location:'Luzon, Filipinas',lat:13.257,lng:123.685,severity:'high',
-   description:'Efusão de lava ativa: 3,8km no Barranco Basud (L), 3,1km no Bonga (SE), 1,3km no Mi-isi (S). Atividade stromboliana episódica.',
-   time:'há 3d',source:'PHIVOLCS',sourceUrl:'https://www.phivolcs.dost.gov.ph'},
-  {id:'sv_ibu',type:'volcano',name:'Ibu — Explosões Ativas',location:'Halmahera, Indonésia',lat:1.488,lng:127.63,severity:'high',
-   description:'Atividade explosiva contínua. Pluma de cinzas a 2.100m (7.000ft) movendo-se para leste. VAAC Darwin emitiu aviso de aviação.',
-   time:'há 2d',source:'PVMBG/VAAC Darwin',sourceUrl:'https://magma.vsi.esdm.go.id'},
-  {id:'sv_reventador',type:'volcano',name:'Reventador — Fluxos Piroclásticos',location:'Equador',lat:-0.077,lng:-77.656,severity:'critical',
-   description:'Explosão forte com múltiplos fluxos piroclásticos descendo os flancos. Coluna de cinzas a 4.600m (15.000ft) em 09/mar. Altamente perigoso.',
-   time:'há 3d',source:'IG-EPN',sourceUrl:'https://www.igepn.edu.ec'},
-  {id:'sv_prestahnukur',type:'volcano',name:'Prestahnukur — Islândia',location:'Islândia',lat:64.52,lng:-20.62,severity:'critical',
-   description:'Atividade explosiva com pluma de cinzas a 6.100m (20.000ft) movendo-se NE. VAAC Londres emitiu alerta de aviação máximo.',
-   time:'há 2d',source:'IMO/VAAC London',sourceUrl:'https://en.vedur.is'},
-  {id:'sv_kanlaon',type:'volcano',name:'Kanlaon — Alerta Nível 2',location:'Filipinas Centrais',lat:10.412,lng:123.132,severity:'medium',
-   description:'Erupção contínua, alerta nível 2 — Unrest Vulcânico Moderado. Plumas cinza registradas. Zona de perigo permanente de 6km.',
-   time:'há 5d',source:'PHIVOLCS',sourceUrl:'https://www.phivolcs.dost.gov.ph'},
-  {id:'sv_fuego',type:'volcano',name:'Fuego — Atividade Contínua',location:'Guatemala',lat:14.473,lng:-90.88,severity:'medium',
-   description:'Erupção contínua com explosões regulares, fluxos de lava curtos e coluna de cinzas. Um dos vulcões mais ativos das Américas.',
-   time:'há 1d',source:'INSIVUMEH',sourceUrl:'https://insivumeh.gob.gt'},
-  // ── CICLONES ATIVOS ─────────────────────────────────────────────
-  {id:'sc_urmil',type:'cyclone',name:'Ciclone Urmil',location:'Pacífico Sul',lat:-14,lng:-172,severity:'medium',
-   description:'Ciclone tropical ativo no Pacífico Sul, formado em 27/fev. Recorde: ciclone nomeado mais tardio da temporada no Pacífico Sul desde Bart/2017.',
-   time:'há 2d',source:'FMS Fiji',sourceUrl:'https://www.met.gov.fj'},
-  {id:'sc_caoba',type:'cyclone',name:'Subtropical Caiobá',location:'Costa do Rio de Janeiro, Brasil',lat:-23.5,lng:-43,severity:'medium',
-   description:'Ciclone subtropical Caiobá ativo próximo à costa do Rio de Janeiro. Formado a partir de uma depressão subtropical em 28/fev.',
-   time:'há 3d',source:'Marinha do Brasil',sourceUrl:'https://www.marinha.mil.br/chm/'},
-  // ── ONDAS DE CALOR ──────────────────────────────────────────────
-  {id:'sh_usasw',type:'heat',name:'Onda de Calor Histórica — EUA Sudoeste',location:'Califórnia / Arizona / Utah, EUA',lat:34.05,lng:-117,severity:'critical',
-   description:'Cúpula de calor sem precedentes para março: LA prevê 37°C, Phoenix baterá recorde histórico de março (100°F+), 20-30°F acima do normal. 214 recordes ameaçados.',
-   time:'agora',source:'NWS / Bloomberg',sourceUrl:'https://www.weather.gov'},
-  {id:'sh_phoenix',type:'heat',name:'Phoenix — Recorde Histórico de Março',location:'Phoenix, Arizona, EUA',lat:33.45,lng:-112.07,severity:'critical',
-   description:'Temperatura prevista para superar 38°C (100°F), o dia mais quente de março já registrado na cidade, batendo recorde por mais de 10 dias de antecedência.',
-   time:'agora',source:'NWS Phoenix',sourceUrl:'https://www.weather.gov/psr/'},
-  // ── FRIO EXTREMO ────────────────────────────────────────────────
-  {id:'sc_usaeast',type:'cold',name:'Frente Fria — Leste dos EUA',location:'Costa Leste, EUA',lat:38.9,lng:-77,severity:'high',
-   description:'Após DC atingir 29°C (84°F), frente ártica derruba temperaturas para 2-4°C no fim de semana. Risco de neve em múltiplos estados do Nordeste.',
-   time:'agora',source:'NWS',sourceUrl:'https://www.weather.gov'},
-  // ── OCEANIA ─────────────────────────────────────────────────────
-  {id:'sa_bundaberg',type:'flood',name:'Enchente — Bundaberg, Queensland',location:'Queensland, Austrália',lat:-24.87,lng:152.35,severity:'critical',
-   description:'Rio Burnett atingiu 7,4m em 10/mar: 200+ casas inundadas, pontes fechadas, 10.000 ilhados, 2.500 sem luz, 1.200 animais mortos, 1.000km de cerca destruídos. Pior enchente em mais de uma década.',
-   time:'há 2d',source:'BOM / Queensland Police',sourceUrl:'https://mypolice.qld.gov.au'},
-  {id:'sa_katherine',type:'flood',name:'Enchente — Katherine, NT',location:'Território do Norte, Austrália',lat:-14.46,lng:132.26,severity:'critical',
-   description:'Rio Katherine atingiu 19,2m em 7/mar — mais alto desde 1998. 700+ desabrigados. Crocodilos nas ruas. Abastecimento de água de Darwin cortado; ordens de fervura de água.',
-   time:'há 5d',source:'Bureau of Meteorology',sourceUrl:'https://www.bom.gov.au/nt/'},
-  {id:'sa_hawaii_flood',type:'flood',name:'Enchentes — Kauai/Oahu, Havaí',location:'Havaí, EUA',lat:22.1,lng:-159.5,severity:'high',
-   description:'Tempestades intensas desde 10/mar com enchentes e inundações em Kauai e Oahu. Parques fechados, evacuações em camping. Proclamação de emergência em 9/mar.',
-   time:'há 2d',source:'NWS Hawaii / GDACS',sourceUrl:'https://www.weather.gov/hfo/'},
-  // ── EUROPA ──────────────────────────────────────────────────────
-  {id:'se_iberia',type:'flood',name:'Tempestades Kristin/Leonardo/Marta — Ibéria',location:'Portugal / Espanha',lat:38.7,lng:-8.9,severity:'critical',
-   description:'3 tempestades consecutivas jan-fev/2026: centenas de milhares evacuados. Grazalema: 500mm em 24h. Portugal: estado de calamidade em 69 municípios. Copernicus EMS ativado.',
-   time:'há 3sem',source:'ESA Copernicus / Euronews',sourceUrl:'https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Intense_rainfall_brings_floods_across_Iberian_Peninsula'},
-  {id:'se_france_monica',type:'storm',name:'Tempestade Monica — Sul da França',location:'Sul da França',lat:43.8,lng:3.5,severity:'high',
-   description:'Tempestade Monica varreu o sul da França a partir de 8/mar causando enchentes graves. Pelo menos 7 pessoas desaparecidas, equipes de busca em andamento.',
-   time:'há 4d',source:'FloodList',sourceUrl:'https://floodlist.com/europe'},
-  // ── ÁFRICA ──────────────────────────────────────────────────────
-  {id:'se_gabon',type:'storm',name:'Inundações e Tempestade — Gabão',location:'Franceville, Gabão, África',lat:-1.63,lng:13.58,severity:'high',
-   description:'Chuvas e ventos fortes em 8/mar no leste do Gabão. Cruz Vermelha confirma 1.400+ feridos em Franceville e Moanda. Centenas de casas destruídas.',
-   time:'há 4d',source:'IFRC / GDACS',sourceUrl:'https://gdacs.org/'},
-  {id:'se_drc',type:'flood',name:'Deslizamento — Rubaya, Congo',location:'Kivu do Norte, RD Congo',lat:-1.5,lng:29.2,severity:'high',
-   description:'Deslizamento de terra maciço na área da mina Rubaya (Masisi), provocado por chuvas torrenciais. Vidas em risco em zona de mineração artesanal.',
-   time:'há 4d',source:'GDACS / OCHA',sourceUrl:'https://gdacs.org/'},
-  // ── ÁSIA / SUDESTE ASIÁTICO ────────────────────────────────────
-  {id:'sa_java_flood',type:'flood',name:'Enchentes e Deslizamentos — Java/Bali',location:'Java / Bali, Indonésia',lat:-7.25,lng:109.8,severity:'critical',
-   description:'69 desastres em 2-8/mar (semana 10 de 2026): enchentes, deslizamentos e tempestades. 18 mortos, 10 desaparecidos, 84.000 afetados em Jakarta, Java Central, Oriental, Bali e NTB.',
-   time:'há 4d',source:'BNPB / AHA Centre ASEAN',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
-  {id:'sa_semeru',type:'volcano',name:'Semeru — Alerta Nível III',location:'Java Oriental, Indonésia',lat:-8.108,lng:112.922,severity:'high',
-   description:'Erupção ativa com alerta nível III (Siaga) — segundo nível mais alto. Emissões contínuas de cinzas e fluxos piroclásticos. Zona de exclusão permanente ativa.',
-   time:'há 4d',source:'PVMBG Indonésia',sourceUrl:'https://magma.vsi.esdm.go.id'},
-  // ── AMÉRICA DO SUL ──────────────────────────────────────────────
-  {id:'sa_chile_fire',type:'heat',name:'Incêndios Florestais — Chile',location:'Biobío / Ñuble, Chile',lat:-37.5,lng:-72.3,severity:'critical',
-   description:'Estado de catástrofe em jan/2026: 75 focos simultâneos, 21 mortos, dezenas de milhares evacuados em Biobío e Ñuble. Calor extremo e vento alimentaram propagação rápida.',
-   time:'há 6sem',source:'CONAF Chile',sourceUrl:'https://www.conaf.cl'},
-  {id:'sa_peru_flood',type:'flood',name:'Inundações — Costa Norte Peru',location:'Piura / Tumbes, Peru',lat:-5.2,lng:-80.6,severity:'high',
-   description:'El Niño costeiro + chuvas intensas causam inundações na costa peruana. Rios transbordando em Piura e Tumbes. Padrão recorrente da temporada úmida 2025-26.',
-   time:'recente',source:'SENAMHI Peru',sourceUrl:'https://www.senamhi.gob.pe'},
-  {id:'sa_bolivia_flood',type:'flood',name:'Enchentes — Beni, Bolívia',location:'Departamento Beni, Bolívia',lat:-13.0,lng:-65.5,severity:'high',
-   description:'Região do Beni, na Amazônia boliviana, sofre inundações sazonais graves em 2026. Comunidades ribeirinhas isoladas, colheitas perdidas.',
-   time:'recente',source:'VIDECI Bolivia / OCHA',sourceUrl:'https://reliefweb.int'},
-  // ── COLÔMBIA ──────────────────────────────────────────────────
-  {id:'col_cordoba',type:'flood',name:'Enchente Nacional — Córdoba, Colômbia',location:'Córdoba / Costa Caribe, Colômbia',lat:8.7,lng:-75.9,severity:'critical',
-   description:'Emergência nacional fev/2026: 44 mortos, 72.000 famílias afetadas, 16.300 casas destruídas em 16 departamentos. Rio Sinú transbordou — 80% de Córdoba submerso. Petro declarou emergência por 30 dias.',
-   time:'há 4sem',source:'UNGRD Colômbia / Copernicus EMSR865',sourceUrl:'https://mapping.emergency.copernicus.eu/news/flood-in-colombia-emsr865/'},
-  // ── MADAGASCAR / MOÇAMBIQUE ────────────────────────────────────
-  {id:'af_gezani_mad',type:'cyclone',name:'Ciclone Gezani — Madagascar',location:'Toamasina, Madagascar',lat:-18.16,lng:49.39,severity:'critical',
-   description:'Ciclone Cat.3 em 10/fev: rajadas de 250km/h. 59 mortos, 804 feridos, 416.000 afetados. 75% de Toamasina (400.000 hab) destruída. Emergência nacional + US$3M da ONU. Veio 11 dias após o Ciclone Fytia.',
-   time:'há 4sem',source:'BNGRC / UNICEF Madagascar',sourceUrl:'https://www.unicef.org/madagascar/en/reports/cyclones-fytia-gezani-response-plan'},
-  {id:'af_gezani_moz',type:'cyclone',name:'Ciclone Gezani — Moçambique',location:'Inhambane, Moçambique',lat:-23.87,lng:35.38,severity:'high',
-   description:'Gezani atingiu Inhambane com 215km/h após Madagascar: 4 mortos, 13.000 sem luz. Moçambique ainda em recuperação das enchentes de jan/2026 que afetaram 700.000 pessoas.',
-   time:'há 4sem',source:'INAM Moçambique / WMO',sourceUrl:'https://wmo.int/media/news/tropical-cyclone-gezani-hits-madagascar-and-threatens-mozambique'},
-  // ── DRC / CONGO ────────────────────────────────────────────────
-  {id:'af_drc_rubaya',type:'flood',name:'Deslizamentos Letais — Rubaya, DRC',location:'Masisi, Kivu do Norte, DRC',lat:-1.47,lng:28.99,severity:'critical',
-   description:'Dois deslizamentos em 3 e 6/mar na mina Rubaya: ~500 mortos no total (300 não confirmados no 2º evento). Chuvas torrenciais contínuas. Área de mineração artesanal de coltan sem infraestrutura de proteção.',
-   time:'há 6d',source:'GDACS / OCHA',sourceUrl:'https://gdacs.org/'},
-  // ── AFRICA ORIENTAL ────────────────────────────────────────────
-  {id:'af_somalia',type:'flood',name:'Enchentes — Somália',location:'Sul da Somália',lat:2.0,lng:45.3,severity:'high',
-   description:'460.000+ pessoas afetadas por inundações desde início de 2026. Cólera ativa. La Niña eleva risco de novas chuvas. Somália entre os 10 piores crises humanitárias de 2026 segundo IRC.',
-   time:'recente',source:'OCHA Somalia / IRC',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
-  {id:'af_southsudan',type:'flood',name:'Enchentes — Sudão do Sul',location:'Planícies do Nilo, Sudão do Sul',lat:7.0,lng:30.5,severity:'high',
-   description:'6º ano consecutivo de enchentes graves: 900.000+ afetados em 2025. Cólera com 100.000+ casos. La Niña traz risco elevado de novas inundações em 2026. Entre as piores crises humanitárias do mundo.',
-   time:'recente',source:'IRC Emergency Watchlist 2026',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
-  // ── NORTE DA AFRICA ───────────────────────────────────────────
-  {id:'af_morocco',type:'flood',name:'Enchentes — Norte de Marrocos',location:'Ksar El Kébir, Marrocos',lat:34.5,lng:-5.9,severity:'medium',
-   description:'Chuvas intensas causaram enchentes no norte de Marrocos em fev/2026, com mortes e feridos. Região impactada pela série de tempestades atlânticas que varreram a Península Ibérica.',
-   time:'há 3sem',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
-  {id:'af_algeria',type:'flood',name:'Enchentes — Relizane, Argélia',location:'Relizane, Argélia',lat:35.7,lng:0.56,severity:'medium',
-   description:'Inundações no norte da Argélia (Relizane) com mortes em fev/2026, durante mesma série de tempestades mediterrâneas que afetou Marrocos, Espanha e Portugal.',
-   time:'há 3sem',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
-  {id:'af_angola_drought',type:'heat',name:'Seca Severa — Angola',location:'Angola Central',lat:-12.5,lng:17.0,severity:'high',
-   description:'Seca persistente desde out/2025 no centro e oeste de Angola. Déficits severos de chuva resultando em condições de estiagem aguda. Segurança alimentar comprometida em 2026 segundo NOAA.',
-   time:'recente',source:'NOAA CPC Global Hazards',sourceUrl:'https://www.cpc.ncep.noaa.gov/products/international/globalweatherhazard/Current.pdf'},
-  // ── ILHAS DO PACÍFICO ─────────────────────────────────────────
-  {id:'pac_solomon_eq',type:'earthquake',name:'Sismo M6.7 — Ilhas Salomão',location:'Kirakira, Ilhas Salomão',lat:-10.4,lng:162.0,severity:'high',
-   description:'Terremoto M6.7 atingiu Kirakira em 9/mar/2026. Região sísmica extrema: 60-70 sismos por ano. Alertas de tsunami emitidos, danos estruturais reportados.',
-   time:'há 3d',source:'GNS Science / USGS',sourceUrl:'https://earthquake.usgs.gov'},
-  {id:'pac_vanuatu',type:'earthquake',name:'Recuperação — Vanuatu',location:'Port Vila, Vanuatu',lat:-17.73,lng:168.32,severity:'medium',
-   description:'Recuperação em andamento do terremoto M7.3 de 17/dez/2024 (14 mortos). Sem água potável, casas destruídas. Cruz Vermelha Vanuatu com resposta ativa em mar/2026.',
-   time:'recente',source:'RNZ / Pacific Humanitarian Team',sourceUrl:'https://www.rnz.co.nz/international/pacific-news'},
-  // ── INDONÉSIA ADICIONAL ───────────────────────────────────────
-  {id:'id_nunukan',type:'flood',name:'Enchente — Nunukan, Bornéu',location:'Nunukan, Kalimantan, Indonésia',lat:4.13,lng:117.67,severity:'high',
-   description:'Enchente 1-3m de profundidade em fev/2026: 12.500 pessoas afetadas em 10 sub-distritos. 17 escolas, 12 postos de saúde e 31 repartições danificadas. Estado de emergência declarado.',
-   time:'há 2sem',source:'BNPB / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-23-february-1-march-2026/'},
-  {id:'id_lewotobi',type:'volcano',name:'Lewotobi — Flores, Indonésia',location:'Flores, Indonésia',lat:-8.54,lng:122.78,severity:'medium',
-   description:'Lewotobi Laki-laki em alerta nível II (Waspada) com atividade persistente em fev-mar/2026. Emissões de cinzas e tremores vulcânicos. Comunidades em raio de 2km evacuadas.',
-   time:'há 1sem',source:'PVMBG Indonésia',sourceUrl:'https://magma.vsi.esdm.go.id'},
-  {id:'id_marapi',type:'volcano',name:'Marapi — Sumatra, Indonésia',location:'Sumatra Ocidental, Indonésia',lat:-0.38,lng:100.47,severity:'medium',
-   description:'Monte Marapi em alerta nível II com erupções e emissões de cinzas nas semanas 9 e 10 de 2026. Proibição de atividades em raio de 3km da cúpula. Monitored por PVMBG.',
-   time:'há 1sem',source:'PVMBG / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
-  // ── FILIPINAS ─────────────────────────────────────────────────
-  {id:'ph_taal',type:'volcano',name:'Taal — Alerta Nível 1',location:'Batangas, Filipinas',lat:14.0,lng:121.0,severity:'medium',
-   description:'Taal em alerta nível 1 com tremores vulcânicos, emissão de vapor e enxofre. PHIVOLCS monitora continuamente em mar/2026. Comunidades no lago em atenção.',
-   time:'há 1sem',source:'PHIVOLCS',sourceUrl:'https://www.phivolcs.dost.gov.ph'},
-  // ── SUDESTE ASIÁTICO ──────────────────────────────────────────
-  {id:'as_vietnam',type:'storm',name:'Tempestades — Quang Ngai, Vietnã',location:'Quang Ngai, Vietnã',lat:15.12,lng:108.79,severity:'medium',
-   description:'Tempestades e ventos fortes em Quang Ngai na semana de 2-8/mar/2026. VDDMA reportou danos em estruturas costeiras. La Niña mantém precipitação acima do normal no Sudeste Asiático.',
-   time:'há 4d',source:'VDDMA Vietnã / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
-  {id:'as_thailand',type:'storm',name:'Ventos Fortes — Tailândia',location:'Nakhon Ratchasima, Tailândia',lat:14.98,lng:102.1,severity:'medium',
-   description:'Tempestades e ventos fortes em Nakhon Ratchasima, Sisaket e Saraburi em 2-8/mar. Danos materiais reportados pelo DDPM. Tailândia ainda em recuperação do sismo de Myanmar (mar/2025).',
-   time:'há 4d',source:'DDPM Tailândia / AHA Centre',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
-  // ── MYANMAR ────────────────────────────────────────────────────
-  {id:'as_myanmar',type:'earthquake',name:'Recuperação Sismo M7.7 — Myanmar',location:'Mandalay, Myanmar',lat:21.97,lng:96.08,severity:'critical',
-   description:'Sismo M7.7 de 28/mar/2025: 3.768 mortos, 22 milhões em necessidade humanitária. Em mar/2026: mais de 140 réplicas, infraestrutura destruída, reconstrução impedida por conflito civil ativo.',
-   time:'recente',source:'OCHA Myanmar',sourceUrl:'https://news.un.org/en/story/2025/04/1162401'},
-  // ── IRÃ ───────────────────────────────────────────────────────
-  {id:'me_iran',type:'earthquake',name:'Sismos Contínuos — Irã',location:'Fárs / Golfo Pérsico, Irã',lat:27.5,lng:52.5,severity:'medium',
-   description:'87 sismos M2.5+ no Irã nos últimos 30 dias. Maior: M4.9 em 13/fev perto de Mohr. Irã em zona de alta atividade tectônica entre placas Arábica e Eurasiática — histórico de sismos destrutivos.',
-   time:'recente',source:'VolcanoDiscovery / IRSC',sourceUrl:'https://www.volcanodiscovery.com/earthquakes/iran.html'},
-  // ── MONGÓLIA ──────────────────────────────────────────────────
-  {id:'as_mongolia',type:'cold',name:'Dzud Severo — Mongólia',location:'Mongólia Central',lat:46.86,lng:103.85,severity:'high',
-   description:'Dzud (desastre endêmico da Mongólia) em 2026: seca de verão + frio extremo e neve no inverno matam gado em massa. Pastores nômades perdem meios de vida. ReliefWeb reporta crise alimentar em curso.',
-   time:'recente',source:'ReliefWeb / Mongolia NDRA',sourceUrl:'https://reliefweb.int/disasters'},
-  // ── HAITI ─────────────────────────────────────────────────────
-  {id:'am_haiti',type:'flood',name:'Crise Total — Haiti',location:'Porto Príncipe, Haiti',lat:18.54,lng:-72.34,severity:'critical',
-   description:'Mandato do Conselho Presidencial expirou em fev/2026 em colapso total. Gangues controlam quase toda a capital. 6ª enchente severa consecutiva em 2025 afetou 900.000. Cólera com 100.000+ casos. Pior crise humanitária das Américas.',
-   time:'recente',source:'IRC Emergency Watchlist 2026',sourceUrl:'https://www.rescue.org/article/top-10-crises-world-cant-ignore-2026'},
-  // ── SRI LANKA ─────────────────────────────────────────────────
-  {id:'as_srilanka',type:'cyclone',name:'Recuperação Ciclone Ditwah — Sri Lanka',location:'Sri Lanka',lat:7.87,lng:80.77,severity:'high',
-   description:'Ciclone Ditwah (28/nov/2025): 1,8 mi de pessoas afetadas, 1,1 mi sem água limpa, 600.000 crianças sem escola. Recuperação humanitária em curso em mar/2026 pelo UNICEF e parceiros.',
-   time:'há 3mes',source:'UNICEF South Asia',sourceUrl:'https://www.unicef.org/appeals/rosa'},
-  // ── NOVA ZELÂNDIA ─────────────────────────────────────────────
-  {id:'pac_nz_kermadec',type:'earthquake',name:'Sismicidade — Kermadec, Nova Zelândia',location:'Trench Kermadec, NZ',lat:-30.0,lng:-178.5,severity:'medium',
-   description:'Zona Kermadec-Tonga: uma das mais sísmicas do mundo. 40 sismos M7.5+ desde 1900. GeoNet NZ monitora atividade contínua. Potencial de tsunamis para ilhas baixas do Pacífico.',
-   time:'recente',source:'GeoNet New Zealand',sourceUrl:'https://www.geonet.org.nz'},
-];
-
-// Merge
-function merge(...arrays){const all=arrays.flat(),seen=new Set();return all.filter(ev=>{if(!ev?.id)return false;const k=`${Math.round((ev.lat||0)*2)/2}_${Math.round((ev.lng||0)*2)/2}_${ev.type}`;if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>{const o={critical:0,high:1,medium:2,low:3};return(o[a.severity]||2)-(o[b.severity]||2);});}
-
-// ─── MAIN LOAD ─────────────────────────────────────────────────
-async 
-// ─── EXTRA DATA SOURCES ──────────────────────────────────────
-async function fGDACS(){
-  // GDACS public API — global disaster alerts
-  try{
-    const d=await fetch('https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromdate=2026-02-10&todate=2026-03-12&alertlevel=Green;Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF&limit=50').then(r=>r.json());
-    if(!d||!d.features) return[];
-    return d.features.map(f=>{
-      const p=f.properties||{};
-      const typeMap={EQ:'earthquake',TC:'hurricane',FL:'flood',VO:'volcano',DR:'flood',WF:'heat'};
-      return{
-        id:'gdacs_'+p.eventid,
-        type:typeMap[p.eventtype]||'earthquake',
-        name:p.name||p.eventtype,
-        location:p.country||'',
-        lat:f.geometry?.coordinates?.[1]||0,
-        lng:f.geometry?.coordinates?.[0]||0,
-        severity:p.alertlevel==='Red'?'critical':p.alertlevel==='Orange'?'high':'medium',
-        source:'GDACS',
-        time:p.fromdate?.slice(0,10)||'',
-        description:`${p.name} — alerta ${p.alertlevel}. Afetados: ${p.affectedcountries?.map(x=>x.countryname).join(', ')||'—'}`,
-        sourceUrl:`https://www.gdacs.org/report.aspx?eventtype=${p.eventtype}&eventid=${p.eventid}`,
-      };
-    }).filter(e=>e.lat!==0);
-  }catch{return[];}
-}
-
-async function fAVON(){
-  // Alaska Volcano Observatory - recent activity
-  try{
-    const d=await fetch('https://www.avo.alaska.edu/feeds/recent_color.php').then(r=>r.text());
-    const lines=d.trim().split('\n').slice(1);
-    return lines.slice(0,15).map(l=>{
-      const p=l.split(',');
-      return{
-        id:'avo_'+p[0],type:'volcano',name:p[1]||'Alaska Volcano',
-        location:'Alaska, USA',lat:parseFloat(p[3])||0,lng:parseFloat(p[4])||0,
-        severity:p[2]==='RED'?'critical':p[2]==='ORANGE'?'high':p[2]==='YELLOW'?'medium':'low',
-        source:'AVO',time:p[5]?.slice(0,10)||'',
-        description:`Nível de alerta: ${p[2]}. ${p[1]}`,
-        sourceUrl:'https://www.avo.alaska.edu/',
-      };
-    }).filter(e=>e.lat!==0);
-  }catch{return[];}
-}
-
-async function fPDC(){
-  // PDC Global hazards feed
-  try{
-    const d=await fetch('https://sentry.pdc.org/hp_srv/services/hazards/t/json/get_active_hazards').then(r=>r.json());
-    if(!d||!Array.isArray(d)) return[];
-    const tm={EARTHQUAKE:'earthquake',VOLCANO:'volcano','TROPICAL CYCLONE':'hurricane',FLOOD:'flood','WILD FIRE':'heat',TSUNAMI:'tsunami','WINTER STORM':'cold','EXTREME HEAT':'heat'};
-    return d.slice(0,30).map(h=>({
-      id:'pdc_'+h.hazard_ID,
-      type:tm[h.type_name]||'earthquake',
-      name:h.hazard_Name,location:h.country_name||h.region||'',
-      lat:parseFloat(h.latitude)||0,lng:parseFloat(h.longitude)||0,
-      severity:h.severity_ID>=4?'critical':h.severity_ID>=3?'high':h.severity_ID>=2?'medium':'low',
-      source:'PDC Global',time:h.start_Date?.slice(0,10)||'',
-      description:h.description||h.hazard_Name,
-      sourceUrl:'https://www.pdc.org/apps/haz_tool/hazards/',
-    })).filter(e=>e.lat!==0);
-  }catch{return[];}
-}
-async function loadAll(force=false){
-  if(isLoading&&!force)return;
-  isLoading=true;
-  try{
-  initPipe();
-  const ico=document.getElementById('rico');ico.style.animation='spin .7s linear infinite';
-  document.getElementById('llbl').textContent='Carregando';
-  renderSrc();
-
-  // Phase 0: Static confirmed events — load instantly
-  events=merge(STATIC_EVENTS);showCC();renderAll();
-
-  // Phase 1: seismic APIs
-  setPP('seismic','l');
-  const [u,em,ir,gn]=await Promise.allSettled([fUSGS(),fEMSC(),fIRIS(),fGeoNet()]);
-  events=merge(u.value||[],em.value||[],ir.value||[],gn.value||[],STATIC_EVENTS);
-  renderAll();setPP('seismic','ok');
-
-  // Phase 2: NASA + NOAA + extra sources
-  setPP('nasa','l');setPP('noaa','l');
-  const [eo,nw,rw,fi,gd,pd,av]=await Promise.allSettled([fEONET(),fNOAA(),fRelief(),fFIRMS(),fGDACS(),fPDC(),fAVON()]);
-  events=merge(events,eo.value||[],nw.value||[],rw.value||[],fi.value||[],gd.value||[],pd.value||[],av.value||[],STATIC_EVENTS);
-  renderAll();setPP('nasa','ok');setPP('noaa','ok');
-
-  // Phase 3: Open-Meteo
-  setPP('meteo','l');
-  const met=await fOpenMeteo();events=merge(events,met);renderAll();setPP('meteo','ok');
-
-  // Phase 4: Claude AI parallel
-  const ai=[
-    ['volcoes',   ['ai_vols1','ai_vols2','ai_vols3','ai_vols4','ai_vols5','ai_vols6','ai_vols7','ai_vols8','ai_vols9','ai_vols10','ai_vols11','ai_vols12'],'Busque TODOS os vulcões em erupção ativa ou alerta elevado agora: Etna, Stromboli, Piton de la Fournaise, Kilauea, Mauna Loa, Fagradalsfjall (Islândia), Reykjanes, Taal, Mayon, Kanlaon (Filipinas), Merapi, Anak Krakatau (Indonésia), vulcões Alaska, Vanuatu, Tonga, Equador, Guatemala, Costa Rica. JSON:'],
-    ['tempestades',['ai_hurr1','ai_hurr2','ai_hurr3','ai_hurr4','ai_hurr5','ai_hurr6'],'Busque furacões, ciclones, tufões ou tempestades tropicais ativos agora no Atlântico, Pacífico, Índico. Include categoria, ventos máximos, localização atual. JSON:'],
-    ['calorfrio',  ['ai_heat1','ai_heat2','ai_heat3','ai_cold1','ai_cold2','ai_cold3'],'Busque ondas de calor extremo (acima de 42°C) e frio extremo (abaixo de -20°C) ativos agora. Include temperaturas reais. type=heat para calor, type=cold para frio. JSON:'],
-    ['enchentes',  ['ai_flood1','ai_flood2','ai_flood3','ai_flood4'],'Busque enchentes e inundações graves ativas agora: Bangladesh, Pakistan, Índia, Europa, Brasil, África. Include cidades afetadas. JSON:'],
-    ['extra',      ['ai_tsun1','ai_tsun2','ai_eq1','ai_eq2','ai_eq3','ai_eq4','ai_eq5','ai_multi1','ai_multi2','ai_multi3','ai_multi4','ai_multi5'],'Busque: alertas de tsunami ativos, terremotos M6+ recentes com danos, outros desastres significativos não cobertos (deslizamentos, nevascas extremas, tempestades de areia). JSON:'],
-  ];
-  ai.forEach(([pid])=>setPP(pid,'l'));
-  const aiR=await Promise.allSettled(ai.map(([,ids,msg])=>fAI(ids,msg)));
-  aiR.forEach(r=>{if(r.value?.length){events=merge(events,r.value);renderAll();}});
-  ai.forEach(([pid])=>setPP(pid,'ok'));
-
-  // Done
-  isLoading=false;ico.style.animation='none';
-  document.getElementById('llbl').textContent='Ao vivo';
-  document.getElementById('hs-s').textContent=new Date().toTimeString().slice(0,5);
-  document.getElementById('pbtot').textContent=events.length+' alertas';
-  renderAll();chkProx();
-  setTimeout(()=>document.getElementById('pbar').classList.remove('open'),5000);
-  }catch(e){console.error('loadAll error:',e);}finally{isLoading=false;}
-}
-
-// ─── AUTO-REFRESH + RETRY ────────────────────────────────────
-let _refreshTimer=null, _retryCount=0;
-const REFRESH_MS=600000, RETRY_MS=[15000,30000,60000,120000];
-
-async function scheduleRefresh(delay=REFRESH_MS){
-  clearTimeout(_refreshTimer);
-  _refreshTimer=setTimeout(async()=>{
-    try{
-      await loadAll(true);
-      _retryCount=0;
-      scheduleRefresh(REFRESH_MS);
-    }catch(e){
-      const backoff=RETRY_MS[Math.min(_retryCount,RETRY_MS.length-1)];
-      _retryCount++;
-      console.warn(`TerraWatch: refresh failed, retry in ${backoff/1000}s`,e);
-      scheduleRefresh(backoff);
-    }
-  }, delay);
-}
-
-// Background fetch worker using MessageChannel to avoid blocking main thread
-function bgFetch(url){
-  return new Promise((resolve,reject)=>{
-    const ch=new MessageChannel();
-    ch.port1.onmessage=e=>e.data.ok?resolve(e.data.data):reject(new Error(e.data.error));
-    // If worker exists use it, else fallback
-    if(window._bgWorker){
-      window._bgWorker.postMessage({url},[ ch.port2]);
-    } else {
-      fetch(url).then(r=>r.json()).then(d=>resolve(d)).catch(reject);
-    }
+function merge(...arrays) {
+  const all = arrays.flat();
+  const seen = new Set();
+  return all.filter(e => {
+    if(!e || !e.id) return false;
+    if(seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
   });
 }
 
-// Init background Worker for non-blocking fetches
-try{
-  const blob=new Blob([`
-    self.onmessage=async function(e){
-      try{const r=await fetch(e.data.url);const d=await r.json();e.ports[0].postMessage({ok:true,data:d});}
-      catch(err){e.ports[0].postMessage({ok:false,error:err.message});}
+function startWorker() {
+  if(_worker) { _worker.terminate(); _worker = null; }
+  try {
+    _worker = new Worker('./worker.js?' + Date.now());
+    _worker.onmessage = function(e) {
+      const {type, data} = e.data;
+      if(type === 'events' && Array.isArray(data)) {
+        events = merge(events, data, STATIC_EVENTS);
+        renderAll();
+        showCC();
+      } else if(type === 'phase') {
+        setPP(data.id, data.status);
+      } else if(type === 'status') {
+        if(data === 'started') {
+          setPP('seismic','l');
+        }
+        if(data === 'done') {
+          document.getElementById('rico').style.animation = 'none';
+          document.getElementById('llbl').textContent = t$('liveData');
+          document.getElementById('hs-s').textContent = new Date().toTimeString().slice(0,5);
+          if(events.length) document.getElementById('pbtot').textContent = events.length + ' alertas';
+          chkProx();
+          setTimeout(() => document.getElementById('pbar').classList.remove('open'), 5000);
+        }
+      }
     };
-  `],{type:'text/javascript'});
-  window._bgWorker=new Worker(URL.createObjectURL(blob));
-}catch(e){window._bgWorker=null;}
+    _worker.onerror = function(err) {
+      console.warn('Worker error:', err.message);
+    };
+    _worker.postMessage({type:'start'});
+  } catch(err) {
+    console.warn('Worker failed, running inline:', err);
+    // Fallback: at least show static events
+    showCC();
+  }
+}
 
-scheduleRefresh(REFRESH_MS);
+function loadAll(force=false) {
+  // Always show static events immediately
+  events = merge(STATIC_EVENTS);
+  showCC();
+  renderAll();
+  // Start pipeline bar
+  initPipe();
+  document.getElementById('rico').style.animation = 'spin .7s linear infinite';
+  document.getElementById('llbl').textContent = 'Carregando';
+  // Launch worker
+  startWorker();
+}
+
+// Auto-refresh every 10min: restart worker
+let _refreshTimer = null;
+function scheduleRefresh() {
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(() => {
+    loadAll(true);
+    scheduleRefresh();
+  }, 600000);
+}
+
 
 function showCC(){document.getElementById('lw').style.display='none';document.getElementById('cc').style.display='block';}
 
@@ -1316,7 +1001,7 @@ function closeModal(){document.getElementById('mbg').classList.remove('o');}
 function mbc(e){if(e.target===document.getElementById('mbg'))closeModal();}
 
 // ─── INIT ──────────────────────────────────────────────────────
-setTheme('all');applyI18n();reqGeo();loadAll();
+setTheme('all');applyI18n();reqGeo();loadAll();scheduleRefresh();
 </script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
 </body>
