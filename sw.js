@@ -1,4 +1,4 @@
-const CACHE = 'terrawatch-20260312214139';
+const CACHE = 'terrawatch-1773352082';
 const ASSETS = ['/Terrawatch/', '/Terrawatch/index.html', '/Terrawatch/manifest.json', '/Terrawatch/worker.js'];
 
 self.addEventListener('install', e => {
