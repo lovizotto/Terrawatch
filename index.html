@@ -258,7 +258,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 </head>
 <body>
 <div id="app">
-<div id="bgc"></div>
+<canvas id="bgc"></canvas>
 <div id="tb">
   <div id="brand"><div id="bico">🌍</div><span id="bnm">TERRA<span>WATCH</span></span></div>
   <div id="tbm"><div id="vsw"><button class="vsb on" id="vs-c" onclick="swV('cards')">⊞ Cards</button><button class="vsb" id="vs-m" onclick="swV('map')">◎ Mapa</button></div></div>
@@ -342,14 +342,12 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.fog.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.clouds.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.clouds2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.cells.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.net.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.dots.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.halo.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 // ─── TYPE CONFIG ───────────────────────────────────────────────
 const T={
@@ -673,117 +671,272 @@ function iCo(){return`<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.
 <circle cx="38" cy="5" r="1" fill="#AADDFF" opacity=".5"><animate attributeName="cy" values="5;40" dur="3.5s" begin="1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="3.5s" begin="1.2s" repeatCount="indefinite"/></circle>
 <circle cx="6" cy="22" r="1.3" fill="#88BBDD" opacity=".5"><animate attributeName="cy" values="22;48" dur="3s" begin="2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0" dur="3s" begin="2s" repeatCount="indefinite"/></circle>
 </svg>`}
-// ─── VANTA.JS BACKGROUND ─────────────────────────────────────
-let _vantaEffect = null;
 
-// Color theme per disaster type
-const VANTA_CONFIGS = {
-  all: {
-    effect: 'NET',
-    opts: {
-      color: 0x304880, backgroundColor: 0x030308,
-      points: 9, maxDistance: 22, spacing: 18,
-      showDots: true,
-    }
-  },
-  earthquake: {
-    effect: 'NET',
-    opts: {
-      color: 0xff8020, backgroundColor: 0x0a0500,
-      points: 11, maxDistance: 20, spacing: 16,
-      showDots: true,
-    }
-  },
-  volcano: {
-    effect: 'CELLS',
-    opts: {
-      color1: 0xff3300, color2: 0xff8800,
-      size: 2.8, speed: 0.9,
-      backgroundColor: 0x080100,
-    }
-  },
-  heat: {
-    effect: 'HALO',
-    opts: {
-      backgroundColor: 0x080100,
-      baseColor: 0xff4400,
-      amplitudeFactor: 1.5, xOffset: 0, yOffset: -0.1, size: 1.8,
-    }
-  },
-  hurricane: {
-    effect: 'WAVES',
-    opts: {
-      color: 0x0060aa, backgroundColor: 0x000818,
-      waveHeight: 28, shininess: 55, waveSpeed: 1.2,
-      zoom: 0.82,
-    }
-  },
-  cyclone: {
-    effect: 'FOG',
-    opts: {
-      highlightColor: 0x00d2a0, midtoneColor: 0x006650,
-      lowlightColor: 0x001810, baseColor: 0x000d08,
-      blurFactor: 0.6, zoom: 1.0, speed: 1.5,
-    }
-  },
-  storm: {
-    effect: 'CLOUDS',
-    opts: {
-      backgroundColor: 0x050308,
-      skyColor: 0x1a1035, cloudColor: 0x3a2080,
-      cloudShadowColor: 0x0a0620,
-      sunColor: 0x8060ff, sunGlareColor: 0x4030b0,
-      sunlightColor: 0x6040ff, speed: 1.8,
-    }
-  },
-  flood: {
-    effect: 'WAVES',
-    opts: {
-      color: 0x0044cc, backgroundColor: 0x000511,
-      waveHeight: 22, shininess: 70, waveSpeed: 1.0,
-      zoom: 0.90,
-    }
-  },
-  tsunami: {
-    effect: 'WAVES',
-    opts: {
-      color: 0x00aadd, backgroundColor: 0x000d1a,
-      waveHeight: 38, shininess: 80, waveSpeed: 1.6,
-      zoom: 0.75,
-    }
-  },
-  cold: {
-    effect: 'CLOUDS2',
-    opts: {
-      backgroundColor: 0x000d1a,
-      speed: 0.8, texturePath: undefined,
-    }
-  },
+// ─── CUSTOM GLSL BACKGROUND ──────────────────────────────────
+let _renderer=null,_composer2=null,_bgMat=null,_bgClock=null,_fadeTgt=0,_fadeVal=0;
+
+const TYPE_MODE={all:0,earthquake:7,volcano:1,heat:1,hurricane:2,cyclone:3,storm:4,flood:2,tsunami:5,cold:6};
+const TYPE_COLS={
+  all:     [[.012,.012,.032],[.028,.028,.063],[.19,.25,.50]],
+  earthquake:[[.040,.021,.000],[.060,.030,.000],[1.0,.63,.13]],
+  volcano: [[.032,.004,.000],[.100,.016,.000],[1.0,.27,.07]],
+  heat:    [[.032,.004,.000],[.100,.016,.000],[1.0,.42,.08]],
+  hurricane:[[.000,.031,.094],[.000,.055,.157],[.00,.62,1.0]],
+  cyclone: [[.000,.031,.067],[.000,.094,.063],[.00,.82,.63]],
+  storm:   [[.020,.012,.031],[.039,.024,.094],[.55,.39,1.0]],
+  flood:   [[.000,.020,.067],[.000,.031,.094],[.00,.39,1.0]],
+  tsunami: [[.000,.031,.094],[.000,.055,.157],[.00,.71,.87]],
+  cold:    [[.000,.031,.063],[.004,.055,.094],[.66,.85,.94]],
 };
 
-function initVanta(type) {
-  const el = document.getElementById('bgc');
-  if (!el || !window.VANTA) return;
+function initBGShader(){
+  if(_renderer)return;
+  const canvas=document.getElementById('bgc');
+  if(!canvas||!window.THREE||!THREE.EffectComposer)return;
 
-  const cfg = VANTA_CONFIGS[type] || VANTA_CONFIGS.all;
-  const effectName = cfg.effect;
-  const fn = window.VANTA[effectName];
-  if (!fn) { setTimeout(() => initVanta(type), 300); return; }
+  _renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:false});
+  _renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 
-  if (_vantaEffect) {
-    _vantaEffect.destroy();
-    _vantaEffect = null;
+  const scene=new THREE.Scene(),cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  _bgClock=new THREE.Clock();
+
+  const VERT=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
+  const FRAG=`precision highp float;
+  uniform float time,mode,fade;uniform vec3 colA,colB,accent;uniform vec2 res;
+  varying vec2 vUv;
+  float hash(float n){return fract(sin(n)*43758.5453);}
+  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  vec2 hash2(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
+  vec3 N13(float p){vec3 v=vec3(p);v+=dot(v,v.yzx+19.19);return fract((v.xxy+v.yxx)*v.zyx);}
+  float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);
+    return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1)),u.x),u.y);}
+  float fbm(vec2 p){float v=0.,a=.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);
+    for(int i=0;i<6;i++){v+=a*noise(p);p=m*p;a*=.5;}return v;}
+  #define S(a,b,t) smoothstep(a,b,t)
+  float saw(float b,float t){return S(0.,b,t)*S(1.,b,t);}
+
+  /* ── STARS ────────────────────────────────────────────────── */
+  vec3 doStars(vec2 uv,float t){
+    vec3 col=mix(colA,colB,uv.y);
+    vec2 g=uv*55.;vec2 gi=floor(g),gf=fract(g);float star=0.;
+    for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++){
+      vec2 id=gi+vec2(x,y);float h=hash(id);
+      if(h>.84){vec2 sp=gf-vec2(x,y)-vec2(hash(id+1.3),hash(id+2.7));
+        star+=(1.-S(0.,.1,length(sp)))*(.5+.5*sin(t*(2.+h*4.)+h*6.28))*(h-.84)*8.;}
+    }
+    float mw=fbm(uv*vec2(5.,2.)+vec2(t*.015,0.))*.22*S(.8,.35,abs(uv.y-.5));
+    col+=accent*.3*mw+vec3(.9,.95,1.)*star*.9;return col;
   }
 
-  _vantaEffect = fn({ el, THREE, mouseControls: false, touchControls: false,
-    gyroControls: false, minHeight: 100, minWidth: 100, ...cfg.opts });
-}
+  /* ── LAVA ─────────────────────────────────────────────────── */
+  vec3 doLava(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.);
+    vec2 q=vec2(fbm(p+vec2(0.,t*.07)),fbm(p+vec2(5.2,1.3)+t*.055));
+    vec2 r=vec2(fbm(p+4.*q+vec2(1.7,.9)+t*.045),fbm(p+4.*q+vec2(9.2,2.8)-t*.038));
+    float f=fbm(p+4.*r);
+    vec3 rock=mix(vec3(.028,.008,.003),vec3(.06,.028,.008),f);
+    float lv=S(.48,.72,f),lv2=S(.60,.82,f);
+    vec3 lc=mix(vec3(.75,.12,.02),vec3(1.,.50,.05),lv2);
+    lc=mix(lc,vec3(1.,.88,.28),pow(lv2,2.8));
+    vec3 col=mix(rock,lc,lv*.9)+lc*pow(lv2,2.)*3.;
+    col+=vec3(.9,.25,.02)*pow(max(sin(f*11.+t*1.8)*.5+.5,0.),7.)*.12;
+    return col;
+  }
 
-window.addEventListener('load', () => setTimeout(() => initVanta('all'), 100));
+  /* ── RAIN ON GLASS — BigWings Heartfelt port ─────────────── */
+  vec2 dropLayer(vec2 uv,float t){
+    vec2 UV=uv;uv.y+=t*.75;
+    vec2 a=vec2(6.,1.),grid=a*2.,id=floor(uv*grid);
+    uv.y+=hash(id.x);id=floor(uv*grid);
+    vec3 n=N13(id.x*35.2+id.y*2376.1);
+    vec2 st=fract(uv*grid)-vec2(.5,0.);
+    float x=n.x-.5,y=UV.y*20.,wi=sin(y+sin(y));
+    x+=wi*(.5-abs(x))*(n.z-.5);x*=.7;
+    float ti=fract(t+n.z);y=(saw(.85,ti)-.5)*.9+.5;
+    float d=length((st-vec2(x,y))*a.yx);
+    float mainDrop=S(.4,.0,d);
+    float rr=sqrt(S(1.,y,st.y+t));float cd=abs(st.x-x);
+    float tFront=S(-.02,.02,st.y-y);
+    float trail=S(.23*rr,.15*rr*rr,cd)*tFront*rr*rr;
+    float trail2=S(.2+rr*.2,.0+rr*.1,cd);
+    float drops2=max(0.,(sin(y*(1.-y)*120.)-st.y))*trail2*tFront*n.z;
+    return vec2(mainDrop+drops2*rr*tFront,trail);
+  }
+  float staticDrops(vec2 uv,float t){
+    uv*=40.;vec2 id=floor(uv);uv=fract(uv)-.5;
+    vec3 n=N13(id.x*107.45+id.y*3543.654);
+    return S(.3,0.,length(uv-(n.xy-.5)*.7))*fract(n.z*10.)*saw(.025,fract(t+n.z));
+  }
+  vec3 doRain(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.);
+    float cl=fbm(p*1.8+vec2(-t*.02,0.))*.6;
+    vec3 sky=mix(colA*1.2,colB*2.,uv.y*.7);
+    sky=mix(sky,sky+accent*.3,S(.35,.65,cl));
+    float lf=pow(S(.0,.5,sin(t*13.1)),.8)*pow(S(.0,.5,sin(t*7.3+1.9)),.6)*.4;
+    sky+=accent*lf+vec3(.3,.35,.5)*lf*.3;
+    float s=staticDrops(uv,t)*.8;
+    vec2 d1=dropLayer(uv,t);
+    vec2 d2=dropLayer(uv*1.85+vec2(.11,0.),t*.72+47.);
+    vec2 d3=dropLayer(uv*2.5+vec2(.31,.1),t*.5+83.);
+    float drops=S(.3,1.,s+d1.x*.9+d2.x*.6+d3.x*.4);
+    float trails=max(d1.y*.9,max(d2.y*.6,d3.y*.4));
+    /* Drops refract + tint sky */
+    vec3 wet=mix(sky,sky+accent*.4,drops*.85+trails*.4);
+    wet+=vec3(.7,.8,.95)*pow(drops,.3)*pow(S(.2,1.,drops),.8)*.22;
+    return wet;
+  }
+
+  /* ── WIND / SMOKE ─────────────────────────────────────────── */
+  vec3 doWind(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.);
+    vec3 col=mix(colA,colB*.8+accent*.08,uv.y);
+    vec2 q=vec2(fbm(p*2.+vec2(-t*.08,0.)),fbm(p*2.+vec2(1.3,2.)-t*.06));
+    float w=fbm(p*3.+q*2.-vec2(t*.12,0.));
+    float w2=fbm(p*4.5+q*1.4+vec2(t*.09,0.));
+    col+=accent*S(.4,.75,w)*.55+accent*S(.45,.7,w2)*.35;
+    for(int i=0;i<5;i++){
+      float fi=float(i);float yo=hash(vec2(fi,0.))*.7+.15;
+      float xp=fract(p.x*(.5+fi*.1)-t*(.6+fi*.25));
+      col+=accent*S(.1,0.,abs(p.y-yo))*(1.-abs(xp-.5)*2.)*S(0.,.15,xp)*S(1.,.85,xp)*(.1+fi*.025);
+    }
+    return col;
+  }
+
+  /* ── STORM CLOUDS + LIGHTNING ─────────────────────────────── */
+  vec3 doStorm(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.)*2.;p.x+=t*.02;
+    vec2 q=vec2(fbm(p+vec2(-t*.04,0.)),fbm(p+vec2(1.7,9.2)+t*.035));
+    float c1=fbm(p+q*1.5),c2=fbm(p*1.6+q*1.2-t*.025);
+    float cloud=S(.35,.68,c1)*.9+S(.40,.65,c2)*.55;
+    vec3 col=mix(mix(colA,colB*1.5,uv.y*.6),colB*2.+accent*.5*cloud,cloud*.85);
+    col+=accent*S(.4,.7,fbm(p*.7+vec2(0.,t*.015)))*(1.-uv.y*.9)*.3;
+    float seed=floor(t*1.6),lp=fract(t*1.6);
+    float bx=hash(vec2(seed,0.))*.6+.2,bolt=0.;
+    float bxx=bx;
+    for(int s=0;s<10;s++){
+      float fs=float(s)/10.;bxx+=(hash(vec2(seed+1.,fs))-.5)*.08;
+      float bw=.003+hash(vec2(seed+2.,fs))*.005;
+      bolt+=S(bw,0.,abs(uv.x-bxx))*S(0.,.06,fs-lp+.06)*S(.08,.0,lp)*.9;
+    }
+    col+=vec3(.55,.6,.9)*bolt*2.+accent*bolt*.8+vec3(.25,.28,.4)*S(.08,.0,lp)*cloud*.5;
+    return col;
+  }
+
+  /* ── OCEAN (Seascape-inspired) ────────────────────────────── */
+  float oceanH(vec2 p,float ch){
+    p+=noise(p)*.8;vec2 wv=1.-abs(sin(p));vec2 sw=abs(cos(p));
+    wv=mix(wv,sw,wv);return pow(1.-pow(wv.x*.65+wv.y*.35,ch),1.2);
+  }
+  vec3 doOcean(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.)*1.8;
+    float h=0.,amp=.6,ch=4.;mat2 om=mat2(1.6,1.2,-1.2,1.6);vec2 sp=p;
+    for(int i=0;i<5;i++){
+      float d=oceanH((sp+vec2(t*.3,0.))*amp,ch)+oceanH((sp-vec2(t*.3,0.))*amp,ch);
+      h+=d*.5/amp;amp*=.2;sp=om*sp;ch=mix(ch,1.,.2);
+    }
+    h/=5.;
+    float wv=S(.3,.65,h),wvH=S(.52,.78,h);
+    vec3 col=mix(mix(vec3(.005,.018,.045),vec3(.01,.055,.13),wv),vec3(.2,.48,.72)+accent*.28,wvH*.8);
+    col+=vec3(.7,.85,1.)*pow(S(.55,.9,h),3.)*.75;
+    col+=vec3(.9,.95,1.)*pow(noise(p*18.+t*3.)*wvH,.4)*.18;
+    col=mix(col,mix(colA,colB*2.,uv.y)*1.5+accent*.15,S(.65,1.,uv.y)*.6);
+    return col;
+  }
+
+  /* ── SNOW ─────────────────────────────────────────────────── */
+  vec3 doSnow(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.);
+    vec3 col=mix(colA,colB+accent*.08,uv.y);float snow=0.;
+    for(int i=0;i<4;i++){
+      float fi=float(i);vec2 sv=p*(7.+fi*6.)+vec2(sin(t*.4+fi*1.7)*fi*.15,-t*(.15+fi*.12));
+      vec2 si=floor(sv);
+      float d=length(fract(sv)-hash2(si+fi*7.3));
+      snow+=S(.2,.0,d)*(.15+hash(si+fi*13.)*.55);
+    }
+    float ice=noise(p*5.+t*.08)*noise(p*3.2-t*.06)*.3;
+    col+=vec3(.55,.75,1.)*snow*1.5+accent*.35*ice+vec3(.6,.8,1.)*ice*.2;
+    return col;
+  }
+
+  /* ── EMBER / EARTHQUAKE ───────────────────────────────────── */
+  vec3 doEmber(vec2 uv,float t){
+    vec2 p=uv*vec2(res.x/res.y,1.);
+    vec3 col=mix(colA,colB,uv.y)+vec3(.3,.12,.02)*pow(1.-uv.y,3.)*.6;
+    float crack=fbm(p*6.);col+=accent*S(.55,.8,crack)+vec3(.9,.4,.05)*pow(S(.62,.85,crack),2.)*1.5;
+    for(int i=0;i<8;i++){
+      float fi=float(i),ex=hash(vec2(fi,0.))*.8+.1;
+      float ey=fract(hash(vec2(fi,1.))+t*(.5+fi*.12));
+      float ed=length(p-vec2(ex,1.-ey));
+      col+=accent*S(.08,0.,ed)+vec3(1.,.55,.1)*S(.04,0.,ed)*1.5;
+    }
+    return col;
+  }
+
+  void main(){
+    vec2 uv=vUv;float t=time;int m=int(mode+.5);vec3 col;
+    if(m==0)col=doStars(uv,t);
+    else if(m==1)col=doLava(uv,t);
+    else if(m==2)col=doRain(uv,t);
+    else if(m==3)col=doWind(uv,t);
+    else if(m==4)col=doStorm(uv,t);
+    else if(m==5)col=doOcean(uv,t);
+    else if(m==6)col=doSnow(uv,t);
+    else col=doEmber(uv,t);
+    float vig=1.-S(.25,1.,length(uv-.5)*1.9);
+    gl_FragColor=vec4(col*(.5+.5*vig)*fade,1.);
+  }`;
+
+  _bgMat=new THREE.ShaderMaterial({uniforms:{
+    time:{value:0},mode:{value:0},fade:{value:0},
+    colA:{value:new THREE.Vector3(.012,.012,.032)},
+    colB:{value:new THREE.Vector3(.028,.028,.063)},
+    accent:{value:new THREE.Vector3(.19,.25,.50)},
+    res:{value:new THREE.Vector2(360,700)},
+  },vertexShader:VERT,fragmentShader:FRAG,depthWrite:false});
+
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),_bgMat));
+  _composer2=new THREE.EffectComposer(_renderer);
+  _composer2.addPass(new THREE.RenderPass(scene,cam));
+  const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(360,700),.65,.5,.30);
+  _composer2.addPass(bloom);
+
+  function rz(){
+    const W=canvas.offsetWidth||360,H=canvas.offsetHeight||700;
+    _renderer.setSize(W,H);_composer2.setSize(W,H);bloom.resolution.set(W,H);
+    _bgMat.uniforms.res.value.set(W,H);
+  }
+  window.addEventListener('resize',rz);rz();
+
+  window._bgSetMode=function(type){
+    const c=TYPE_COLS[type]||TYPE_COLS.all;
+    _fadeTgt=0;
+    setTimeout(()=>{
+      _bgMat.uniforms.mode.value=TYPE_MODE[type]??0;
+      _bgMat.uniforms.colA.value.set(...c[0]);
+      _bgMat.uniforms.colB.value.set(...c[1]);
+      _bgMat.uniforms.accent.value.set(...c[2]);
+      _fadeTgt=0.95;
+    },460);
+  };
+
+  (function loop(){
+    requestAnimationFrame(loop);
+    _bgMat.uniforms.time.value=_bgClock.getElapsedTime();
+    _fadeVal+=(_fadeTgt-_fadeVal)*.04;
+    _bgMat.uniforms.fade.value=_fadeVal;
+    _composer2.render();
+  })();
+  setTimeout(()=>{_fadeTgt=0.95;},120);
+}
+window.addEventListener('load',()=>{
+  function tryInit(){if(!window.THREE||!THREE.EffectComposer)return setTimeout(tryInit,150);initBGShader();}
+  setTimeout(tryInit,80);
+});
+
 
 function setTheme(type){
-  initVanta(type);
-  const acc = type==='all'?'#5080F0':(T[type]?.c||'#5080F0');
+  if(window._bgSetMode) _bgSetMode(type);
+  const acc=type==='all'?'#5080F0':(T[type]?.c||'#5080F0');
   document.getElementById('bico').style.cssText=`background:linear-gradient(145deg,${acc},${acc}88);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 4px 12px ${acc}55`;
   document.querySelector('#bnm span').style.color=acc;
   document.documentElement.style.setProperty('--acc',acc);
