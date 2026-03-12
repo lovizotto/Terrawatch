@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TerraWatch">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -178,7 +179,19 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 @keyframes spin{to{transform:rotate(360deg)}}
 .lt2{font-size:10px;color:rgba(255,255,255,.26);font-weight:700;letter-spacing:.6px;font-family:'IBM Plex Mono',monospace}
 
+
+/* Leaflet dark theme */
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(0.7) contrast(1.1) saturate(0.8)}
+#leafmap{background:#04040A}
+.leaflet-control-zoom{display:none}
+.leaflet-control-attribution{display:none}
+.leaflet-popup-content-wrapper{background:rgba(6,8,18,.95);border:.5px solid rgba(255,255,255,.12);border-radius:0;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.leaflet-popup-tip{background:rgba(6,8,18,.95)}
+.leaflet-popup-content{color:#fff;font-family:'IBM Plex Sans',sans-serif;font-size:12px;margin:10px 14px}
+
 /* MAP */
+@keyframes mPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.25);opacity:.7}}
+
 #mv{height:100%;position:relative;display:none}
 #wsvg{width:100%;height:100%}
 .mpip{position:absolute;background:rgba(0,0,0,.62);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border:.5px solid var(--gb);border-radius:0;padding:12px 14px;box-shadow:var(--spec),0 8px 36px rgba(0,0,0,.48)}
@@ -301,11 +314,11 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
     </div>
   </div>
   <div id="mv">
-    <svg id="wsvg" viewBox="0 0 900 480"></svg>
-    <div class="mpip" id="mleg"><div class="lt3">Legenda</div><div id="legi"></div></div>
-    <div class="mpip" id="mhint">Toque nos pontos</div>
-    <button id="srctgl" onclick="tglSrc()">⊙ Fontes</button>
-    <div id="srcpanel"><div class="spin"><div class="sph"><span>TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
+    <div id="leafmap" style="width:100%;height:100%;z-index:1"></div>
+    <div class="mpip" id="mleg" style="z-index:10"><div class="lt3">Legenda</div><div id="legi"></div></div>
+    <div class="mpip" id="mhint" style="z-index:10">Toque nos pontos</div>
+    <button id="srctgl" onclick="tglSrc()" style="z-index:10">⊙ Fontes</button>
+    <div id="srcpanel" style="z-index:20"><div class="spin"><div class="sph"><span>TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
   </div>
 </div>
 <div id="mnav">
@@ -1065,44 +1078,73 @@ function renderCards(){
 
 // ─── MAP ───────────────────────────────────────────────────────
 const NS='http://www.w3.org/2000/svg';
-function proj(la,ln,W,H){return[(ln+180)/360*W,(90-la)/180*H];}
-const LANDS=["M170,60L220,55L235,70L255,80L260,110L240,130L235,150L210,155L195,170L185,155L175,140L165,115L155,100L150,80Z","M215,180L240,175L255,185L260,210L255,240L245,270L230,285L215,275L205,255L200,230L205,210Z","M420,58L452,54L472,64L477,78L467,88L455,83L440,89L428,84L414,73Z","M430,108L462,103L478,118L482,150L477,192L465,217L450,225L434,217L418,190L413,158L418,128Z","M490,48L592,43L652,52L682,68L702,80L696,100L668,112L640,116L598,120L558,116L528,120L508,110L488,95L474,74Z","M640,240L682,234L702,243L712,264L700,284L674,290L650,280L633,264L634,249Z","M664,74L676,70L682,80L672,86L664,82Z","M528,118L557,116L567,134L561,156L545,159L530,150L524,134Z","M380,148L395,145L405,158L400,178L388,180L376,168L374,156Z","M330,80L360,75L375,90L370,115L350,120L330,110L322,95Z","M550,270L570,265L585,278L580,300L560,305L545,292L544,279Z","M450,300L460,296L470,310L460,325L445,320L440,308Z","M730,310L760,305L775,318L770,340L748,345L733,332L728,320Z","M740,360L768,356L780,372L775,390L752,394L740,380Z","M460,420L480,416L492,428L486,448L465,451L453,438Z"];
 
 function renderMap(){
-  const svg=document.getElementById('wsvg'),W=900,H=480;svg.innerHTML='';
-  const bg=document.createElementNS(NS,'rect');bg.setAttribute('width',W);bg.setAttribute('height',H);
-  const mgd=document.createElementNS(NS,'defs');
-  const mgg=document.createElementNS(NS,'radialGradient');mgg.setAttribute('id','ocn');mgg.setAttribute('cx','50%');mgg.setAttribute('cy','50%');mgg.setAttribute('r','70%');
-  const ms1=document.createElementNS(NS,'stop');ms1.setAttribute('offset','0%');ms1.setAttribute('stop-color','#020814');
-  const ms2=document.createElementNS(NS,'stop');ms2.setAttribute('offset','100%');ms2.setAttribute('stop-color','#000408');
-  mgg.appendChild(ms1);mgg.appendChild(ms2);mgd.appendChild(mgg);svg.appendChild(mgd);
-  bg.setAttribute('fill','url(#ocn)');svg.appendChild(bg);
-  // Grid
-  for(let lg=-180;lg<=180;lg+=30){const[x]=proj(0,lg,W,H);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',H);l.setAttribute('stroke','rgba(255,255,255,.04)');l.setAttribute('stroke-width','.6');svg.appendChild(l);}
-  for(let la=-90;la<=90;la+=30){const[,y]=proj(la,0,W,H);const l=document.createElementNS(NS,'line');l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',W);l.setAttribute('y2',y);l.setAttribute('stroke','rgba(255,255,255,.04)');l.setAttribute('stroke-width','.6');svg.appendChild(l);}
-  // Landmasses
-  LANDS.forEach(d=>{const p=document.createElementNS(NS,'path');p.setAttribute('d',d);p.setAttribute('fill','rgba(30,40,55,.8)');p.setAttribute('stroke','rgba(80,120,160,.25)');p.setAttribute('stroke-width','0.8');svg.appendChild(p);});
-  // User dot
-  if(uGeo){const[ux,uy]=proj(uGeo.lat,uGeo.lng,W,H);const ur=document.createElementNS(NS,'circle');ur.setAttribute('cx',ux);ur.setAttribute('cy',uy);ur.setAttribute('r','5');ur.setAttribute('fill','none');ur.setAttribute('stroke','#30D158');ur.setAttribute('stroke-width','1.5');const a1=document.createElementNS(NS,'animate');a1.setAttribute('attributeName','r');a1.setAttribute('values','5;18');a1.setAttribute('dur','2s');a1.setAttribute('repeatCount','indefinite');const a2=document.createElementNS(NS,'animate');a2.setAttribute('attributeName','opacity');a2.setAttribute('values','0.8;0');a2.setAttribute('dur','2s');a2.setAttribute('repeatCount','indefinite');ur.appendChild(a1);ur.appendChild(a2);svg.appendChild(ur);const ud=document.createElementNS(NS,'circle');ud.setAttribute('cx',ux);ud.setAttribute('cy',uy);ud.setAttribute('r','4.5');ud.setAttribute('fill','#30D158');ud.setAttribute('stroke','white');ud.setAttribute('stroke-width','1.5');ud.style.filter='drop-shadow(0 0 4px #30D158)';svg.appendChild(ud);}
-  // Event markers
-  const fl=curFilter==='all'?events:events.filter(e=>e.type===curFilter);
-  fl.forEach(ev=>{
-    const cfg=T[ev.type];if(!cfg||!ev.lat)return;
-    const[x,y]=proj(ev.lat,ev.lng,W,H);
-    for(let i=0;i<2;i++){const ring=document.createElementNS(NS,'circle');ring.setAttribute('cx',x);ring.setAttribute('cy',y);ring.setAttribute('r','5');ring.setAttribute('fill','none');ring.setAttribute('stroke',cfg.c);ring.setAttribute('stroke-width',i?'1':'1.5');const a1=document.createElementNS(NS,'animate');a1.setAttribute('attributeName','r');a1.setAttribute('from','5');a1.setAttribute('to','22');a1.setAttribute('dur','2.3s');a1.setAttribute('begin',i?'0.7s':'0s');a1.setAttribute('repeatCount','indefinite');const a2=document.createElementNS(NS,'animate');a2.setAttribute('attributeName','opacity');a2.setAttribute('from','0.7');a2.setAttribute('to','0');a2.setAttribute('dur','2.3s');a2.setAttribute('begin',i?'0.7s':'0s');a2.setAttribute('repeatCount','indefinite');ring.appendChild(a1);ring.appendChild(a2);svg.appendChild(ring);}
-    const dot=document.createElementNS(NS,'circle');dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('r','5.5');dot.setAttribute('fill',cfg.c);dot.setAttribute('stroke','rgba(255,255,255,.3)');dot.setAttribute('stroke-width','1.5');dot.style.filter=`drop-shadow(0 0 5px ${cfg.c})`;dot.style.cursor='pointer';
-    dot.addEventListener('click',()=>openModal(ev));
-    dot.addEventListener('touchstart',e=>{e.preventDefault();openModal(ev);},{passive:false});
-    dot.addEventListener('mouseenter',()=>{const tt=document.getElementById('mtt');document.getElementById('mt1').textContent=cfg.l;document.getElementById('mt1').style.color=cfg.c;document.getElementById('mt2').textContent=ev.name;document.getElementById('mt3').textContent=ev.location;const sr=document.getElementById('wsvg').getBoundingClientRect(),sx=sr.width/900,sy=sr.height/480;tt.style.left=(x*sx+sr.left+14)+'px';tt.style.top=(y*sy+sr.top-48)+'px';tt.style.display='block';});
-    dot.addEventListener('mouseleave',()=>document.getElementById('mtt').style.display='none');
-    svg.appendChild(dot);
-  });
-  // Legend
-  const leg=document.getElementById('legi');leg.innerHTML='';
-  Object.entries(T).forEach(([k,cfg])=>{const cnt=events.filter(e=>e.type===k).length;if(!cnt)return;const item=document.createElement('div');item.className='lr3'+(curFilter===k?' on':'');item.innerHTML=`<div class="lrd" style="background:${cfg.c};box-shadow:0 0 4px ${cfg.c}"></div><span class="lrl">${cfg.l} (${cnt})</span>`;item.onclick=()=>setF(curFilter===k?'all':k);leg.appendChild(item);});
-}
+  const fl = curFilter==='all' ? events : events.filter(e=>e.type===curFilter);
 
-// ─── FILTER / VIEW ─────────────────────────────────────────────
+  // Init Leaflet once
+  if(!window._leafMap){
+    window._leafMap = L.map('leafmap', {
+      zoomControl: false,
+      attributionControl: false,
+      minZoom: 2, maxZoom: 8,
+    }).setView([20, 10], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      subdomains: 'abc',
+    }).addTo(window._leafMap);
+
+    window._leafMarkers = [];
+  }
+
+  // Clear old markers
+  window._leafMarkers.forEach(m => window._leafMap.removeLayer(m));
+  window._leafMarkers = [];
+
+  // Add event markers
+  const sevOrder = {critical:0,high:1,medium:2,low:3};
+  const sorted = [...fl].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3));
+
+  sorted.forEach(ev => {
+    const sev = ev.severity||'low';
+    const tc = T[ev.type];
+    const col = tc ? tc.c : '#5080FF';
+    const r   = sev==='critical'?14 : sev==='high'?11 : sev==='medium'?9 : 7;
+    const pulse = sev==='critical'||sev==='high';
+
+    const icon = L.divIcon({
+      className:'',
+      html: `<div style="
+        width:${r*2}px;height:${r*2}px;
+        background:${col}33;
+        border:2px solid ${col};
+        border-radius:50%;
+        box-shadow:0 0 ${pulse?12:6}px ${col}88;
+        ${pulse?`animation:mPulse 2s ease-in-out infinite`:''}
+      "></div>`,
+      iconSize:[r*2,r*2],
+      iconAnchor:[r,r],
+    });
+
+    const marker = L.marker([ev.lat, ev.lng], {icon})
+      .addTo(window._leafMap)
+      .on('click', () => showModal(ev));
+
+    window._leafMarkers.push(marker);
+  });
+
+  // Legend
+  const legi = document.getElementById('legi');
+  const types = [...new Set(fl.map(e=>e.type))];
+  legi.innerHTML = types.map(t => {
+    const tc = T[t]; if(!tc) return '';
+    return `<div class="lr3 on" onclick="setF('${t}')">
+      <div class="lrd" style="background:${tc.c}"></div>
+      <div class="lrl">${tc.l}</div>
+    </div>`;
+  }).join('');
+}
 function setF(f){curFilter=f;document.querySelectorAll('.fc').forEach(c=>c.classList.toggle('on',c.dataset.t===f));setTheme(f);if(curView==='cards')renderCards();else renderMap();}
 function swV(v){curView=v;document.getElementById('cv').style.display=v==='cards'?'block':'none';document.getElementById('mv').style.display=v==='map'?'block':'none';document.getElementById('vs-c').classList.toggle('on',v==='cards');document.getElementById('vs-m').classList.toggle('on',v==='map');document.getElementById('mn-c').classList.toggle('on',v==='cards');document.getElementById('mn-m').classList.toggle('on',v==='map');if(v==='map')renderMap();else renderCards();}
 
@@ -1127,6 +1169,7 @@ function mbc(e){if(e.target===document.getElementById('mbg'))closeModal();}
 // ─── INIT ──────────────────────────────────────────────────────
 setTheme('all');reqGeo();loadAll();
 </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
 </body>
 </html>
