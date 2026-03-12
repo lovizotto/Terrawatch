@@ -1215,6 +1215,77 @@ function renderCards(){
   });
   grid.appendChild(frag);
 }
+function renderMap(){
+  if(!window.L) return;
+  const fl = curFilter==='all' ? events : events.filter(e=>e.type===curFilter);
+
+  if(!window._lmap){
+    window._lmap = L.map('leafmap',{
+      zoomControl:false, attributionControl:false, minZoom:2, maxZoom:8
+    }).setView([20,10],2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19, subdomains:'abc'
+    }).addTo(window._lmap);
+    window._lmarkers=[];
+  }
+
+  window._lmarkers.forEach(m=>window._lmap.removeLayer(m));
+  window._lmarkers=[];
+
+  fl.forEach(ev=>{
+    if(!ev.lat||!ev.lng) return;
+    const cfg = T[ev.type]||T.earthquake;
+    const sev = ev.severity||'low';
+    const pulse = sev==='critical'||sev==='high';
+    const size = sev==='critical'?44:sev==='high'?38:sev==='medium'?34:30;
+    const glow = pulse ? `box-shadow:0 0 14px 4px ${cfg.c}88,0 0 4px ${cfg.c};` : `box-shadow:0 2px 8px rgba(0,0,0,.6);`;
+    const ring = pulse ? `<div style="position:absolute;inset:-4px;border-radius:50%;border:1.5px solid ${cfg.c};opacity:.6;animation:mPulse 2s ease-in-out infinite"></div>` : '';
+    const svgIcon = (cfg.i||iEq)();
+
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="
+        position:relative;width:${size}px;height:${size}px;
+        background:rgba(8,10,22,.82);
+        border:1.5px solid ${cfg.c};
+        border-radius:50%;overflow:hidden;cursor:pointer;
+        ${glow}
+        transition:transform .15s
+      " onmouseenter="this.style.transform='scale(1.18)'" onmouseleave="this.style.transform='scale(1)'">
+        ${svgIcon}
+        ${ring}
+      </div>`,
+      iconSize:[size,size],
+      iconAnchor:[size/2,size/2],
+      popupAnchor:[0,-(size/2+4)],
+    });
+
+    const marker = L.marker([ev.lat,ev.lng],{icon,zIndexOffset:sev==='critical'?1000:sev==='high'?500:0})
+      .addTo(window._lmap)
+      .on('click',()=>openModal(ev));
+
+    window._lmarkers.push(marker);
+  });
+
+  // Legend
+  const legi=document.getElementById('legi');
+  const types=[...new Set(fl.map(e=>e.type))];
+  legi.innerHTML=types.map(t=>{
+    const tc=T[t];if(!tc)return'';
+    const cnt=fl.filter(e=>e.type===t).length;
+    return`<div class="lr3 on" onclick="setF('${t}')">
+      <div class="lrd" style="background:${tc.c}"></div>
+      <div class="lrl">${tc.l} <span style="opacity:.4">${cnt}</span></div>
+    </div>`;
+  }).join('');
+
+  setTimeout(()=>window._lmap.invalidateSize(),100);
+}
+
+// alias
+function showModal(ev){ openModal(ev); }
+
+
 function setF(f){curFilter=f;document.querySelectorAll('.fc').forEach(c=>c.classList.toggle('on',c.dataset.t===f));setTheme(f);if(curView==='cards')renderCards();else renderMap();}
 function swV(v){curView=v;document.getElementById('cv').style.display=v==='cards'?'block':'none';document.getElementById('mv').style.display=v==='map'?'block':'none';document.getElementById('vs-c').classList.toggle('on',v==='cards');document.getElementById('vs-m').classList.toggle('on',v==='map');document.getElementById('mn-c').classList.toggle('on',v==='cards');document.getElementById('mn-m').classList.toggle('on',v==='map');if(v==='map')renderMap();else renderCards();}
 
