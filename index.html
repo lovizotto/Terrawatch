@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TerraWatch">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Terrawatch/assets/index-SoQJ7uJO.js"></script>
-  <link rel="stylesheet" crossorigin href="/Terrawatch/assets/index-OqPZJ6Sq.css">
+  <script type="module" crossorigin src="/Terrawatch/assets/index-D_WgG6qK.js"></script>
+  <link rel="stylesheet" crossorigin href="/Terrawatch/assets/index-DsUrh0w1.css">
 </head>
 <body>
 <div id="app">
@@ -28,7 +28,6 @@
   </div>
 </div>
 <div id="palert"></div>
-<div id="ebar" style="display:none">⚠ <span id="emsg"></span></div>
 <div id="pbar"><div class="pbinn"><span class="pblbl">Fontes</span><div id="pbst"></div><span id="pbtot"></span></div></div>
 <div id="fstrip">
   <div class="fc on" data-t="all" style="--cb:rgba(255,255,255,.12);--cbr:rgba(255,255,255,.2);--cg:rgba(255,255,255,.06);--cc:#fff" onclick="setF('all')"><span class="fcdot"></span>Todos<span class="fcc" id="fc-all">0</span></div>
@@ -49,22 +48,22 @@
       <div id="hero">
         <div class="hero-label">Situação Global</div>
         <div class="hrow">
-          <div class="hs red"><span class="hs-ico">⚠</span><div class="hsn red" id="hs-c">0</div><div class="hsl" data-i="criticals">Críticos</div></div>
+          <div class="hs red"><span class="hs-ico">⚠</span><div class="hsn red" id="hs-c">0</div><div class="hsl">Críticos</div></div>
           <div class="hs"><span class="hs-ico">◎</span><div class="hsn" id="hs-t">0</div><div class="hsl">Ativos</div></div>
           <div class="hs"><span class="hs-ico">⊙</span><div class="hsn mono" id="hs-sr">0</div><div class="hsl">Fontes</div></div>
           <div class="hs"><span class="hs-ico">◷</span><div class="hsn mono" id="hs-clk">--:--</div><div class="hsl">Hora local</div></div>
         </div>
       </div>
       <div class="sh" id="shlbl">TODOS OS ALERTAS</div>
-      <div id="cards-root"></div>
+      <div id="cgrid"></div>
     </div>
   </div>
   <div id="mv">
     <div id="leafmap" style="width:100%;height:100%;z-index:1"></div>
     <div class="mpip" id="mleg" style="z-index:10"><div class="lt3">Legenda</div><div id="legi"></div></div>
-    <div class="mpip" id="mhint" style="z-index:10" data-i="tapPoints">Toque nos pontos</div>
+    <div class="mpip" id="mhint" style="z-index:10">Toque nos pontos</div>
     <button id="srctgl" onclick="tglSrc()" style="z-index:10">⊙ Fontes</button>
-    <div id="srcpanel" style="z-index:20"><div class="spin"><div class="sph"><span data-i="allSources">TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
+    <div id="srcpanel" style="z-index:20"><div class="spin"><div class="sph"><span>TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
   </div>
 </div>
 <div id="mnav">
@@ -72,8 +71,6 @@
   <button class="mnb" id="mn-m" onclick="swV('map')"><span class="mni">◎</span>Mapa</button>
 </div>
 </div>
-
-<!-- MODAL -->
 <div id="mbg" onclick="mbc(event)">
   <div id="mbox">
     <div id="mhdr">
@@ -101,6 +98,5 @@
     </div>
   </div>
 </div>
-
 </body>
 </html>
