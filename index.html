@@ -549,6 +549,47 @@ const STATIC_EVENTS=[
   {id:'sc_usaeast',type:'cold',name:'Frente Fria — Leste dos EUA',location:'Costa Leste, EUA',lat:38.9,lng:-77,severity:'high',
    description:'Após DC atingir 29°C (84°F), frente ártica derruba temperaturas para 2-4°C no fim de semana. Risco de neve em múltiplos estados do Nordeste.',
    time:'agora',source:'NWS',sourceUrl:'https://www.weather.gov'},
+  // ── OCEANIA ─────────────────────────────────────────────────────
+  {id:'sa_bundaberg',type:'flood',name:'Enchente — Bundaberg, Queensland',location:'Queensland, Austrália',lat:-24.87,lng:152.35,severity:'critical',
+   description:'Rio Burnett atingiu 7,4m em 10/mar: 200+ casas inundadas, pontes fechadas, 10.000 ilhados, 2.500 sem luz, 1.200 animais mortos, 1.000km de cerca destruídos. Pior enchente em mais de uma década.',
+   time:'há 2d',source:'BOM / Queensland Police',sourceUrl:'https://mypolice.qld.gov.au'},
+  {id:'sa_katherine',type:'flood',name:'Enchente — Katherine, NT',location:'Território do Norte, Austrália',lat:-14.46,lng:132.26,severity:'critical',
+   description:'Rio Katherine atingiu 19,2m em 7/mar — mais alto desde 1998. 700+ desabrigados. Crocodilos nas ruas. Abastecimento de água de Darwin cortado; ordens de fervura de água.',
+   time:'há 5d',source:'Bureau of Meteorology',sourceUrl:'https://www.bom.gov.au/nt/'},
+  {id:'sa_hawaii_flood',type:'flood',name:'Enchentes — Kauai/Oahu, Havaí',location:'Havaí, EUA',lat:22.1,lng:-159.5,severity:'high',
+   description:'Tempestades intensas desde 10/mar com enchentes e inundações em Kauai e Oahu. Parques fechados, evacuações em camping. Proclamação de emergência em 9/mar.',
+   time:'há 2d',source:'NWS Hawaii / GDACS',sourceUrl:'https://www.weather.gov/hfo/'},
+  // ── EUROPA ──────────────────────────────────────────────────────
+  {id:'se_iberia',type:'flood',name:'Tempestades Kristin/Leonardo/Marta — Ibéria',location:'Portugal / Espanha',lat:38.7,lng:-8.9,severity:'critical',
+   description:'3 tempestades consecutivas jan-fev/2026: centenas de milhares evacuados. Grazalema: 500mm em 24h. Portugal: estado de calamidade em 69 municípios. Copernicus EMS ativado.',
+   time:'há 3sem',source:'ESA Copernicus / Euronews',sourceUrl:'https://www.esa.int/Applications/Observing_the_Earth/Copernicus/Sentinel-1/Intense_rainfall_brings_floods_across_Iberian_Peninsula'},
+  {id:'se_france_monica',type:'storm',name:'Tempestade Monica — Sul da França',location:'Sul da França',lat:43.8,lng:3.5,severity:'high',
+   description:'Tempestade Monica varreu o sul da França a partir de 8/mar causando enchentes graves. Pelo menos 7 pessoas desaparecidas, equipes de busca em andamento.',
+   time:'há 4d',source:'FloodList',sourceUrl:'https://floodlist.com/europe'},
+  // ── ÁFRICA ──────────────────────────────────────────────────────
+  {id:'se_gabon',type:'storm',name:'Inundações e Tempestade — Gabão',location:'Franceville, Gabão, África',lat:-1.63,lng:13.58,severity:'high',
+   description:'Chuvas e ventos fortes em 8/mar no leste do Gabão. Cruz Vermelha confirma 1.400+ feridos em Franceville e Moanda. Centenas de casas destruídas.',
+   time:'há 4d',source:'IFRC / GDACS',sourceUrl:'https://gdacs.org/'},
+  {id:'se_drc',type:'flood',name:'Deslizamento — Rubaya, Congo',location:'Kivu do Norte, RD Congo',lat:-1.5,lng:29.2,severity:'high',
+   description:'Deslizamento de terra maciço na área da mina Rubaya (Masisi), provocado por chuvas torrenciais. Vidas em risco em zona de mineração artesanal.',
+   time:'há 4d',source:'GDACS / OCHA',sourceUrl:'https://gdacs.org/'},
+  // ── ÁSIA / SUDESTE ASIÁTICO ────────────────────────────────────
+  {id:'sa_java_flood',type:'flood',name:'Enchentes e Deslizamentos — Java/Bali',location:'Java / Bali, Indonésia',lat:-7.25,lng:109.8,severity:'critical',
+   description:'69 desastres em 2-8/mar (semana 10 de 2026): enchentes, deslizamentos e tempestades. 18 mortos, 10 desaparecidos, 84.000 afetados em Jakarta, Java Central, Oriental, Bali e NTB.',
+   time:'há 4d',source:'BNPB / AHA Centre ASEAN',sourceUrl:'https://ahacentre.org/weekly-disaster-update/weekly-disaster-update-2-8-march-2026/'},
+  {id:'sa_semeru',type:'volcano',name:'Semeru — Alerta Nível III',location:'Java Oriental, Indonésia',lat:-8.108,lng:112.922,severity:'high',
+   description:'Erupção ativa com alerta nível III (Siaga) — segundo nível mais alto. Emissões contínuas de cinzas e fluxos piroclásticos. Zona de exclusão permanente ativa.',
+   time:'há 4d',source:'PVMBG Indonésia',sourceUrl:'https://magma.vsi.esdm.go.id'},
+  // ── AMÉRICA DO SUL ──────────────────────────────────────────────
+  {id:'sa_chile_fire',type:'heat',name:'Incêndios Florestais — Chile',location:'Biobío / Ñuble, Chile',lat:-37.5,lng:-72.3,severity:'critical',
+   description:'Estado de catástrofe em jan/2026: 75 focos simultâneos, 21 mortos, dezenas de milhares evacuados em Biobío e Ñuble. Calor extremo e vento alimentaram propagação rápida.',
+   time:'há 6sem',source:'CONAF Chile',sourceUrl:'https://www.conaf.cl'},
+  {id:'sa_peru_flood',type:'flood',name:'Inundações — Costa Norte Peru',location:'Piura / Tumbes, Peru',lat:-5.2,lng:-80.6,severity:'high',
+   description:'El Niño costeiro + chuvas intensas causam inundações na costa peruana. Rios transbordando em Piura e Tumbes. Padrão recorrente da temporada úmida 2025-26.',
+   time:'recente',source:'SENAMHI Peru',sourceUrl:'https://www.senamhi.gob.pe'},
+  {id:'sa_bolivia_flood',type:'flood',name:'Enchentes — Beni, Bolívia',location:'Departamento Beni, Bolívia',lat:-13.0,lng:-65.5,severity:'high',
+   description:'Região do Beni, na Amazônia boliviana, sofre inundações sazonais graves em 2026. Comunidades ribeirinhas isoladas, colheitas perdidas.',
+   time:'recente',source:'VIDECI Bolivia / OCHA',sourceUrl:'https://reliefweb.int'},
 ];
 
 // Merge
