@@ -247,67 +247,6 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 .mntx{font-size:12px;color:rgba(255,255,255,.62);line-height:1.65}
 
 
-/* ── Glass caustics & reflections ─────────────────────────── */
-.ec::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:
-    radial-gradient(ellipse 80% 40% at 20% 10%, rgba(255,255,255,.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 60% at 80% 90%, rgba(255,255,255,.04) 0%, transparent 50%);
-  mix-blend-mode:screen;
-}
-/* Caustic light pattern — SVG turbulence warped light */
-.ec::after{
-  content:'';position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;
-  background:
-    radial-gradient(ellipse 120% 35% at var(--rx,30%) var(--ry,20%),
-      rgba(255,255,255,.055) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 80% at var(--rx2,70%) var(--ry2,80%),
-      rgba(255,255,255,.03) 0%, transparent 55%);
-  animation:causticDrift 9s ease-in-out infinite alternate;
-  mix-blend-mode:screen;
-  filter:url(#caustic-warp);
-}
-/* Reflection sweep — diagonal light bar */
-.ec-reflect{
-  position:absolute;top:0;left:-60%;width:45%;height:100%;z-index:4;pointer-events:none;
-  background:linear-gradient(105deg,
-    transparent 0%,
-    rgba(255,255,255,.014) 30%,
-    rgba(255,255,255,.05) 50%,
-    rgba(255,255,255,.014) 70%,
-    transparent 100%);
-  animation:reflectSweep 8s ease-in-out infinite;
-  mix-blend-mode:screen;
-}
-.ec:hover .ec-reflect{animation-duration:3s}
-@keyframes causticDrift{
-  0%  {--rx:25%;--ry:15%;--rx2:75%;--ry2:85%;opacity:.8}
-  33% {--rx:45%;--ry:25%;--rx2:55%;--ry2:70%;opacity:1}
-  66% {--rx:20%;--ry:40%;--rx2:80%;--ry2:55%;opacity:.9}
-  100%{--rx:35%;--ry:10%;--rx2:65%;--ry2:90%;opacity:.85}
-}
-@keyframes reflectSweep{
-  0%,100%{left:-60%;opacity:0}
-  5%{opacity:1}
-  35%{left:110%;opacity:.7}
-  36%,99%{left:110%;opacity:0}
-}
-/* Top specular edge — thicker glass edge highlight */
-.ec-specular{
-  position:absolute;top:0;left:0;right:0;height:1px;z-index:5;pointer-events:none;
-  background:linear-gradient(90deg,
-    transparent 0%,
-    rgba(255,255,255,.35) 20%,
-    rgba(255,255,255,.55) 50%,
-    rgba(255,255,255,.35) 80%,
-    transparent 100%);
-  animation:specularPulse 6s ease-in-out infinite;
-}
-@keyframes specularPulse{
-  0%,100%{opacity:.6}50%{opacity:1}
-}
-/* SVG caustic filter — defined once in DOM */
-#caustic-svg{position:absolute;width:0;height:0;overflow:hidden}
 
 /* MOB NAV */
 #mnav{position:relative;z-index:10;flex-shrink:0;display:none;background:rgba(0,0,0,.5);backdrop-filter:var(--blur-lg);-webkit-backdrop-filter:var(--blur-lg);border-top:.5px solid var(--gb);padding:8px 0 env(safe-area-inset-bottom)}
@@ -318,17 +257,6 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 </style>
 </head>
 <body>
-<svg id="caustic-svg" aria-hidden="true">
-  <defs>
-    <filter id="caustic-warp" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.025" numOctaves="3" seed="5" result="noise">
-        <animate attributeName="baseFrequency" values="0.018 0.025;0.022 0.03;0.016 0.022;0.018 0.025" dur="12s" repeatCount="indefinite"/>
-        <animate attributeName="seed" values="5;8;3;5" dur="18s" repeatCount="indefinite"/>
-      </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </defs>
-</svg>
 <div id="app">
 <canvas id="bgc"></canvas>
 <div id="tb">
@@ -752,260 +680,367 @@ function initThreeBG() {
   _threeInited = true;
 
   const renderer = new THREE.WebGLRenderer({canvas: bgc, antialias: false, alpha: false, powerPreference: 'default'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.toneMapping = THREE.ReinhardToneMapping;
-  renderer.toneMappingExposure = 1.4;
+  renderer.toneMappingExposure = 1.3;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
   const scene = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(55, 1, 0.01, 50);
-  cam.position.set(0, 0, 3.5);
+  cam.position.set(0, 0, 3.2);
 
   function doResize() {
-    const W = bgc.offsetWidth, H = bgc.offsetHeight;
+    const W = bgc.offsetWidth || 400, H = bgc.offsetHeight || 700;
     renderer.setSize(W, H);
     composer.setSize(W, H);
     bloomPass.resolution.set(W, H);
     cam.aspect = W / H;
     cam.updateProjectionMatrix();
-    causticU.res.value.set(W, H);
+    uCommon.res.value.set(W, H);
   }
   window.addEventListener('resize', doResize);
 
-  // ── GLSL snippets ──────────────────────────────────────────
-  const VERT = `varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+  const VERT = `varying vec2 vUv;
+  void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`;
 
-  // ── Caustic material ──────────────────────────────────────
-  const causticU = {
-    time:   {value: 0.0},
-    colA:   {value: new THREE.Color(0x020208)},
-    colB:   {value: new THREE.Color(0x1a0500)},
-    accent: {value: new THREE.Color(0x3040a8)},
-    fade:   {value: 0.0},
-    res:    {value: new THREE.Vector2(800, 600)},
+  // ── shared uniforms ───────────────────────────────────────
+  const uCommon = {
+    time:   { value: 0.0 },
+    res:    { value: new THREE.Vector2(400, 700) },
+    colA:   { value: new THREE.Color('#030308') },
+    colB:   { value: new THREE.Color('#07070F') },
+    accent: { value: new THREE.Color('#304080') },
+    fade:   { value: 0.0 },
+    mode:   { value: 0.0 },  // 0=stars 1=clouds 2=lava 3=wind 4=rain 5=ocean 6=snow 7=lightning
   };
 
-  const causticMat = new THREE.ShaderMaterial({
-    uniforms: causticU,
+  // ── GLSL noise helpers (shared prefix) ───────────────────
+  const NOISE_GLSL = `
+    vec3 hash3(vec3 p){
+      p = fract(p*vec3(443.8975,397.2973,491.1871));
+      p += dot(p,p.yxz+19.19);
+      return fract((p.xxy+p.yxx)*p.zyx);
+    }
+    float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+    float noise(vec2 p){
+      vec2 i=floor(p), f=fract(p), u=f*f*(3.0-2.0*f);
+      return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),
+                 mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
+    }
+    float fbm(vec2 p){
+      float v=0., a=.5;
+      mat2 m=mat2(1.6,1.2,-1.2,1.6);
+      for(int i=0;i<6;i++){ v+=a*noise(p); p=m*p; a*=.5; }
+      return v;
+    }
+    float fbm4(vec2 p){
+      float v=0., a=.5;
+      mat2 m=mat2(1.6,1.2,-1.2,1.6);
+      for(int i=0;i<4;i++){ v+=a*noise(p); p=m*p; a*=.5; }
+      return v;
+    }
+    float worley(vec2 p){
+      vec2 i=floor(p), f=fract(p);
+      float md=8.;
+      for(int x=-2;x<=2;x++) for(int y=-2;y<=2;y++){
+        vec2 nb=vec2(float(x),float(y));
+        vec2 pt=vec2(hash(i+nb+vec2(7.3,2.1)), hash(i+nb+vec2(1.7,9.2)));
+        pt=.5+.48*sin(6.2831*pt);
+        md=min(md,length(nb+pt-f));
+      }
+      return md;
+    }
+  `;
+
+  // ── MODE SHADERS ─────────────────────────────────────────
+  const FRAG = `
+    precision highp float;
+    uniform float time, mode, fade;
+    uniform vec3 colA, colB, accent;
+    uniform vec2 res;
+    varying vec2 vUv;
+    ${NOISE_GLSL}
+
+    // ── STARS ───────────────────────────────────────────
+    vec3 doStars(vec2 uv, float t){
+      vec2 g = uv * 60.0;
+      vec2 gi = floor(g); vec2 gf = fract(g);
+      float star = 0.0;
+      for(int x=-1;x<=1;x++) for(int y=-1;y<=1;y++){
+        vec2 off = vec2(float(x),float(y));
+        vec2 id  = gi + off;
+        float h  = hash(id);
+        if(h > 0.85){
+          vec2 spos = gf - off - vec2(hash(id+1.3), hash(id+2.7));
+          float d   = length(spos);
+          float twinkle = .5 + .5*sin(t*(2.0+h*4.0) + h*6.28);
+          star += (1.0-smoothstep(0.0,.12,d)) * twinkle * (h-.85)*6.0;
+        }
+      }
+      // Milky way band
+      float mw = fbm4(uv*vec2(6.0,2.5) + vec2(t*.02,0.)) * .18;
+      mw *= smoothstep(.8,.45,abs(uv.y-.5));
+      return colA + accent*.25*mw + vec3(.9,.95,1.)*star*.7;
+    }
+
+    // ── CLOUDS ─────────────────────────────────────────
+    vec3 doClouds(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0) * 2.5;
+      p.x += t * 0.055;
+      float cloud  = fbm(p);
+      float cloud2 = fbm(p * 1.8 + vec2(1.3, 2.1) - t*.035);
+      float c = smoothstep(.38, .72, cloud) * .8
+              + smoothstep(.42, .68, cloud2) * .45;
+      // Thunderhead highlight
+      vec3 skyCol  = mix(vec3(.005,.008,.018), vec3(.01,.018,.04), uv.y);
+      vec3 cloudLo = vec3(.04,.05,.07);
+      vec3 cloudHi = vec3(.18,.22,.28) + accent*.3;
+      vec3 col = mix(skyCol, cloudLo, c);
+      // Underlit glow near bottom
+      float ul = smoothstep(.35,.7,fbm(p*.7+vec2(0.,t*.02))) * (1.-uv.y*.8);
+      col += accent * ul * .25;
+      // Lightning flash
+      float lf = pow(max(sin(t*14.3)*.5+.5,0.),22.) * pow(max(sin(t*9.1+2.3)*.5+.5,0.),18.);
+      col += vec3(.3,.35,.5)*lf*c;
+      return col;
+    }
+
+    // ── LAVA ───────────────────────────────────────────
+    vec3 doLava(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0);
+      // Flowing rock texture — domain warped fbm
+      vec2 q = vec2(fbm(p + vec2(0., t*.08)), fbm(p + vec2(5.2, 1.3) + t*.06));
+      vec2 r = vec2(fbm(p + 4.*q + vec2(1.7,.9) + t*.05),
+                    fbm(p + 4.*q + vec2(9.2,2.8) - t*.04));
+      float f = fbm(p + 4.*r);
+      // Dark rock base
+      vec3 rock = mix(vec3(.03,.01,.005), vec3(.08,.04,.01), f);
+      // Lava glow in cracks — where f is high
+      float lava = smoothstep(.5, .75, f);
+      float lava2 = smoothstep(.62, .85, f);
+      vec3 lavCol = mix(vec3(.8,.15,.02), vec3(1.,.55,.05), lava2);
+      lavCol = mix(lavCol, vec3(1.,.9,.3), pow(lava2,3.));
+      vec3 col = mix(rock, lavCol, lava*.85);
+      // Bloom source: super bright core
+      col += lavCol * pow(lava2, 2.) * 2.5;
+      // Heat distortion shimmer
+      col += vec3(.9,.3,.05) * pow(max(sin(f*12.+t*2.)*.5+.5,0.),8.) * .08;
+      return col;
+    }
+
+    // ── WIND ───────────────────────────────────────────
+    vec3 doWind(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0);
+      // Streaking horizontal bands
+      float streak = 0.;
+      for(int i=0;i<6;i++){
+        float fi = float(i);
+        float speed = .8 + fi*.3;
+        float y = fract(hash(vec2(fi,0.)) + uv.y*5. + fi*.31);
+        float xoff = fract(p.x * (.4+fi*.12) - t * speed + hash(vec2(fi,1.)));
+        float band = (1.-smoothstep(0.,.018, abs(y-.5)*10.)) 
+                   * (1.-abs(xoff-.5)*2.) 
+                   * pow(1.-abs(uv.y-.5)*2., 1.5);
+        streak += band * (.3+fi*.08);
+      }
+      // Background turbulence
+      float turb = fbm4((p + vec2(-t*.12, t*.03))*3.) * .25;
+      // Particle streaks using fbm
+      vec2 warp = vec2(fbm(p*4.+t*.15), fbm(p*4.+vec2(1.7,9.2)-t*.12));
+      float dust = fbm4(p*6. + warp*1.2 - t*.2) * .35;
+      vec3 skyCol = mix(colA, colB*1.5, uv.y);
+      vec3 col = skyCol + accent*streak*.8 + accent*.4*turb + vec3(.7,.65,.5)*dust*.3;
+      return col;
+    }
+
+    // ── RAIN ───────────────────────────────────────────
+    vec3 doRain(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0);
+      vec3 col = mix(colA, colB*.7, uv.y);
+      // Multiple layers of rain streaks
+      float rain = 0.;
+      for(int i=0;i<4;i++){
+        float fi = float(i);
+        float speed = 2.8 + fi*1.2;
+        float slant = .08 + fi*.03;
+        vec2 rp = p * vec2(18.+fi*7., 1.) + vec2(p.y*slant, 0.);
+        rp.y -= t * speed;
+        vec2 ri = floor(rp); vec2 rf = fract(rp);
+        float h1 = hash(ri); float h2 = hash(ri+vec2(0.,1.));
+        float streak = smoothstep(.92,.98, rf.x) // thin vertical
+                     * (1.-abs(rf.y - h1)) // position jitter
+                     * smoothstep(0.,.3,rf.y) * smoothstep(1.,.7,rf.y);
+        rain += streak * (.15 + fi*.06) * (.3+h1*.7);
+      }
+      // Puddle ripples at bottom
+      float ripple = sin((uv.x*res.x*.05 + t*3.) ) * sin((uv.y*8.+t*2.));
+      float pud = (1.-uv.y)*smoothstep(.75,.98,1.-uv.y)*(.5+ripple*.5);
+      // Fog layer
+      float fog = fbm4(p*2. - vec2(t*.04,0.))*.3 * (1.-uv.y*.6);
+      col += accent*.6 * rain + accent*.15*fog;
+      col += accent*.2*pud + vec3(.2,.35,.5)*pud*.3;
+      return col;
+    }
+
+    // ── OCEAN ──────────────────────────────────────────
+    vec3 doOcean(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0) * 2.0;
+      // Layered wave normals via fbm
+      vec2 flow1 = vec2(fbm(p     + t*.12), fbm(p     + vec2(5.2,1.3) + t*.10));
+      vec2 flow2 = vec2(fbm(p*2.1 - t*.09), fbm(p*2.1 + vec2(1.7,9.2) - t*.08));
+      float wave = fbm(p + flow1*1.4 + flow2*.7);
+      // Deep to shallow gradient
+      vec3 deep  = mix(vec3(.005,.012,.03), vec3(.01,.03,.07), uv.y);
+      vec3 mid   = vec3(.02,.06,.12);
+      vec3 crest = vec3(.3,.55,.75) + accent*.3;
+      float wv   = smoothstep(.38,.62,wave);
+      float wvH  = smoothstep(.55,.75,wave);
+      vec3 col = mix(deep, mid, wv);
+      col = mix(col, crest, wvH*.7);
+      // Foam/white caps — Worley at crests
+      float foam = (1.-smoothstep(0.,.22,worley(p*3.+t*.18)))*wvH;
+      col += vec3(.7,.85,1.)*foam*.8;
+      // Specular sparkle
+      float spark = pow(1.-worley(p*8.+t*.3), 4.) * wvH;
+      col += vec3(.9,.95,1.)*spark*.5;
+      // Depth shadow at base
+      col *= 1. - smoothstep(.6,1.,uv.y)*.5;
+      return col;
+    }
+
+    // ── SNOW / ICE ─────────────────────────────────────
+    vec3 doSnow(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0);
+      vec3 col = mix(vec3(.005,.008,.018), vec3(.015,.02,.03), uv.y);
+      // Falling snowflakes — layers
+      float snow = 0.;
+      for(int i=0;i<4;i++){
+        float fi=float(i); float scale=8.+fi*5.;
+        float speed=.18+fi*.12;
+        vec2 sp = p*scale + vec2(sin(t*.3+fi)*0.3, -t*speed);
+        vec2 si=floor(sp); vec2 sf=fract(sp);
+        vec2 center = vec2(hash(si+fi),hash(si+fi+1.3));
+        float d=length(sf-center);
+        snow += (1.-smoothstep(0.,.18,d)) * (.2+hash(si+fi*2.)*.6) * (.15+fi*.07);
+      }
+      // Ice crystal shimmer
+      float ice = pow(1.-worley(p*4.+t*.04), 3.) * .25;
+      col += vec3(.5,.7,1.)*snow + accent*.4*ice + vec3(.6,.8,1.)*ice*.3;
+      return col;
+    }
+
+    // ── LIGHTNING ──────────────────────────────────────
+    vec3 doLightning(vec2 uv, float t){
+      vec2 p = uv * vec2(res.x/res.y, 1.0);
+      vec3 col = mix(colA, colB*.6 + accent*.08, uv.y);
+      // Dark storm base
+      float storm = fbm4(p*2.5 - vec2(t*.03,0.));
+      col = mix(col, col*.3 + accent*.15, smoothstep(.4,.7,storm));
+      // Electric bolt simulation via hash branching
+      float bolt = 0.;
+      float bx = p.x - .5;
+      float by = p.y;
+      float seed = floor(t*1.8);
+      for(int s=0;s<12;s++){
+        float fs=float(s)/12.;
+        float boff = hash(vec2(seed,fs))*2.-1.;
+        float bwidth = .002 + hash(vec2(seed+1.,fs))*.006;
+        bx += boff*.04;
+        float bd = abs(p.x - (.5+bx*by));
+        bolt += (1.-smoothstep(0.,bwidth,bd)) * smoothstep(0.,.08,by) * (1.-by) * hash(vec2(seed+2.,fs));
+      }
+      float flash = pow(max(sin(t*11.7+1.2)*.5+.5,0.),20.) * pow(max(sin(t*7.3-2.1)*.5+.5,0.),16.);
+      col += accent*1.5*bolt + vec3(.6,.65,.9)*bolt*.5;
+      col += vec3(.15,.18,.3)*flash;
+      return col;
+    }
+
+    void main(){
+      vec2 uv = vUv;
+      float t = time;
+      int m = int(mode+.5);
+
+      vec3 col;
+      if(m==0)      col = doStars(uv, t);
+      else if(m==1) col = doClouds(uv, t);
+      else if(m==2) col = doLava(uv, t);
+      else if(m==3) col = doWind(uv, t);
+      else if(m==4) col = doRain(uv, t);
+      else if(m==5) col = doOcean(uv, t);
+      else if(m==6) col = doSnow(uv, t);
+      else          col = doLightning(uv, t);
+
+      // Vignette
+      float vig = 1.0 - smoothstep(.25, 1.0, length(uv - .5)*1.8);
+      col *= (.55 + .45*vig);
+
+      gl_FragColor = vec4(col * fade, 1.0);
+    }
+  `;
+
+  const bgMat = new THREE.ShaderMaterial({
+    uniforms: uCommon,
     vertexShader: VERT,
-    fragmentShader: `
-      precision highp float;
-      uniform float time;
-      uniform vec3 colA, colB, accent;
-      uniform float fade;
-      uniform vec2 res;
-      varying vec2 vUv;
-
-      vec2 hash2(vec2 p){
-        p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));
-        return fract(sin(p)*43758.5453);
-      }
-
-      // Worley / Voronoi — bright at cell centers converging
-      float worley(vec2 p, float spd){
-        vec2 i=floor(p), f=fract(p);
-        float md=8.;
-        for(int x=-2;x<=2;x++) for(int y=-2;y<=2;y++){
-          vec2 nb=vec2(float(x),float(y));
-          vec2 pt=hash2(i+nb);
-          pt=.5+.48*sin(spd+6.2831*pt);
-          float d=length(nb+pt-f);
-          md=min(md,d);
-        }
-        return md;
-      }
-
-      // FBM for depth / soft bg noise
-      float fbm(vec2 p){
-        float v=0., a=.5;
-        for(int i=0;i<4;i++){
-          v+=a*fract(sin(dot(p,vec2(127.1+float(i)*31.,311.7+float(i)*17.)))*43758.5453);
-          p*=2.02; a*=.5;
-        }
-        return v;
-      }
-
-      void main(){
-        vec2 uv = vUv;
-        float ar = res.x/res.y;
-        vec2 suv = (uv-.5)*vec2(ar,1.)*4.;
-
-        float t = time;
-
-        // Three caustic layers, staggered speed & scale
-        float c1 = worley(suv*1.0,  t*0.55);
-        float c2 = worley(suv*1.55 + vec2(1.3,2.1), t*0.35);
-        float c3 = worley(suv*0.72 + vec2(-2.5,1.7), t*0.70);
-
-        // Caustic = sharp bright lines at Voronoi edges
-        float caus = (1.-smoothstep(0.0,.22,c1))*1.0
-                   + (1.-smoothstep(0.0,.18,c2))*0.6
-                   + (1.-smoothstep(0.0,.14,c3))*0.4;
-        caus = clamp(caus, 0., 1.);
-        caus = pow(caus, 1.6);
-
-        // Soft background FBM
-        float bg = fbm(suv*0.4 + t*0.04)*0.35;
-
-        // Vignette
-        float vig = 1.-smoothstep(.3, 1.1, length(uv-.5)*2.);
-
-        // Final color
-        vec3 col = colA;
-        col = mix(col, colA*2., bg*vig);          // soft bg lift
-        col += accent * caus * 1.8 * vig;          // caustic in accent color
-        col += colB * caus * 0.6 * vig;            // plus warm tint
-
-        // Caustic edge glow (bloom source)
-        col += accent * pow(caus, 3.) * 3.0 * vig;
-
-        gl_FragColor = vec4(col, fade * vig);
-      }
-    `,
-    transparent: true,
+    fragmentShader: FRAG,
     depthWrite: false,
   });
-  const causticMesh = new THREE.Mesh(new THREE.PlaneGeometry(12, 7), causticMat);
-  causticMesh.position.z = -0.5;
-  scene.add(causticMesh);
-
-  // ── Glass planes ─────────────────────────────────────────
-  const glassVertSrc = `
-    varying vec3 vNorm; varying vec3 vView; varying vec2 vUv;
-    void main(){
-      vUv=uv;
-      vec4 mv=modelViewMatrix*vec4(position,1.);
-      vView=-mv.xyz;
-      vNorm=normalMatrix*normal;
-      gl_Position=projectionMatrix*mv;
-    }
-  `;
-  const glassFragSrc = `
-    precision highp float;
-    uniform float time; uniform vec3 tint; uniform float fade; uniform float idx;
-    varying vec3 vNorm; varying vec3 vView; varying vec2 vUv;
-    void main(){
-      vec3 n=normalize(vNorm), v=normalize(vView);
-      float fr=pow(1.-max(dot(n,v),0.),.5*2.5+.5);
-
-      // Specular
-      vec3 l1=normalize(vec3(.6,1.,.8));
-      vec3 l2=normalize(vec3(-.5,-.8,.4));
-      float sp1=pow(max(dot(reflect(-l1,n),v),0.),48.);
-      float sp2=pow(max(dot(reflect(-l2,n),v),0.),32.);
-
-      // Internal caustic shimmer (refractive caustic on glass surface)
-      float ripple = sin(vUv.x*14.+time*.5+idx*1.7)*sin(vUv.y*10.-time*.4+idx);
-      float cshift  = sin(vUv.x*22.-time*.8+idx*2.3)*sin(vUv.y*18.+time*.6);
-      float causticGlass = pow(max(ripple*.5+.5,0.),3.) * pow(max(cshift*.5+.5,0.),3.);
-      causticGlass *= .4;
-
-      // Reflection streak (env approximation)
-      float streak = pow(max(sin(vUv.x*3.14159),0.)*fr,2.) * .25;
-
-      vec3 col = tint*(fr*.55 + sp1*.6 + sp2*.25 + causticGlass + streak);
-      col += vec3(.8,.9,1.)*sp1*.4;   // white specular
-
-      float a = fade*(fr*.6 + sp1*.5 + sp2*.2 + causticGlass*.7 + .02);
-      gl_FragColor = vec4(col, clamp(a,0.,0.92));
-    }
-  `;
-
-  const gpDefs = [
-    {p:[-0.9, 0.25, 0.4], r:[-0.18, 0.42, 0.10], s:[2.0, 1.3]},
-    {p:[ 0.8,-0.15, 0.2], r:[ 0.12,-0.50,-0.14], s:[1.5, 0.95]},
-    {p:[ 0.0,-0.55, 0.6], r:[-0.38, 0.08, 0.21], s:[2.2, 0.65]},
-    {p:[-0.2, 0.65,-0.3], r:[ 0.28, 0.16,-0.32], s:[1.3, 0.85]},
-    {p:[ 0.5, 0.45, 0.0], r:[-0.08,-0.28, 0.08], s:[1.0, 1.10]},
-  ];
-
-  const glassPlanes = gpDefs.map((d, i) => {
-    const u = {
-      time:  {value: 0.0},
-      tint:  {value: new THREE.Color(0x5080ff)},
-      fade:  {value: 0.0},
-      idx:   {value: parseFloat(i)},
-    };
-    const mat = new THREE.ShaderMaterial({
-      uniforms: u, vertexShader: glassVertSrc, fragmentShader: glassFragSrc,
-      transparent: true, depthWrite: false, side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-    });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(d.s[0], d.s[1]), mat);
-    mesh.position.set(...d.p);
-    mesh.rotation.set(...d.r);
-    scene.add(mesh);
-    return {mesh, u, base: d};
-  });
+  const bgMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 6), bgMat);
+  bgMesh.position.z = -1.0;
+  scene.add(bgMesh);
 
   // ── Post-processing ──────────────────────────────────────
   const composer = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, cam));
   const bloomPass = new THREE.UnrealBloomPass(
-    new THREE.Vector2(800, 600), 1.05, 0.55, 0.24
+    new THREE.Vector2(400, 700), 0.75, 0.55, 0.28
   );
   composer.addPass(bloomPass);
 
-  // ── Theme state ──────────────────────────────────────────
-  let targetA  = new THREE.Color(0x020208);
-  let targetB  = new THREE.Color(0x1a0500);
-  let targetAc = new THREE.Color(0x3040a8);
-  let targetGT = new THREE.Color(0x5080ff);
-  let fadeTgt  = 0.0;
-  let fadeGlassTgt = 0.0;
-
-  // Call this from setTheme
-  window._threeSetTheme = function(type) {
-    const bg  = (type==='all') ? BGA : (T[type]?.bg || BGA);
-    const acc = (type==='all') ? '#5080F0' : (T[type]?.c || '#5080F0');
-    targetA  = new THREE.Color(bg.c1);
-    targetB  = new THREE.Color(bg.c2);
-    targetAc = new THREE.Color(bg.p);
-    targetGT = new THREE.Color(acc);
-    // Fade out → fade in
-    fadeTgt      = 0.0;
-    fadeGlassTgt = 0.0;
-    setTimeout(() => { fadeTgt = 0.95; fadeGlassTgt = 1.0; }, 520);
+  // Mode name → index
+  const MODE_MAP = { stars:0, ember:2, heat:2, wind:3, wave:4, lightning:7, snow:6 };
+  // Disaster type → mode
+  const TYPE_MODE = {
+    all:0, earthquake:0, volcano:2, hurricane:4, cyclone:3,
+    storm:7, flood:4, tsunami:5, heat:2, cold:6
   };
 
-  // ── First resize ─────────────────────────────────────────
+  let targetFade = 0.0;
+  let targetMode = 0.0;
+  let crossFadeDir = 1;
+
+  window._threeSetTheme = function(type) {
+    const bg  = (type==='all') ? BGA : (T[type]?.bg || BGA);
+    const acc = (type==='all') ? '#304080' : (T[type]?.bg?.p || '#304080');
+    // Fade out first
+    targetFade = 0.0;
+    setTimeout(() => {
+      uCommon.colA.value.set(bg.c1);
+      uCommon.colB.value.set(bg.c2);
+      uCommon.accent.value.set(acc);
+      uCommon.mode.value = TYPE_MODE[type] ?? 0;
+      targetFade = 0.92;
+    }, 480);
+  };
+
   doResize();
 
-  // ── Animate ──────────────────────────────────────────────
   const clock = new THREE.Clock();
   (function loop() {
     requestAnimationFrame(loop);
     const t = clock.getElapsedTime();
-
-    // Lerp colors
-    causticU.colA.value.lerp(targetA,  0.025);
-    causticU.colB.value.lerp(targetB,  0.025);
-    causticU.accent.value.lerp(targetAc, 0.025);
-    causticU.time.value  = t;
-    causticU.fade.value += (fadeTgt - causticU.fade.value) * 0.045;
-
-    glassPlanes.forEach((gp, i) => {
-      gp.u.time.value = t;
-      gp.u.tint.value.lerp(targetGT, 0.028);
-      gp.u.fade.value += (fadeGlassTgt - gp.u.fade.value) * 0.038;
-      // Float
-      gp.mesh.position.y = gp.base.p[1] + Math.sin(t * 0.28 + i * 1.57) * 0.055;
-      gp.mesh.rotation.z = gp.base.r[2] + Math.sin(t * 0.18 + i * 1.10) * 0.018;
-    });
-
+    uCommon.time.value = t;
+    uCommon.fade.value += (targetFade - uCommon.fade.value) * 0.045;
     composer.render();
   })();
 
-  // Trigger initial fade-in
-  setTimeout(() => { fadeTgt = 0.95; fadeGlassTgt = 1.0; }, 100);
+  setTimeout(() => { targetFade = 0.92; }, 120);
 }
 
-// Attempt init once scripts likely loaded
 window.addEventListener('load', () => setTimeout(initThreeBG, 80));
 
 function setTheme(type){
   if (window._threeSetTheme) window._threeSetTheme(type);
-  const acc=type==='all'?'#5080F0':(T[type]?.c||'#5080F0');
+  const acc = type==='all'?'#5080F0':(T[type]?.c||'#5080F0');
   document.getElementById('bico').style.cssText=`background:linear-gradient(145deg,${acc},${acc}88);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 4px 12px ${acc}55`;
   document.querySelector('#bnm span').style.color=acc;
   document.documentElement.style.setProperty('--acc',acc);
@@ -1380,8 +1415,6 @@ function renderCards(){
     card.className='ec'+(isCrit?' is-critical':'');
     card.style.cssText=`--ct:${cfg.ct};--ca:${cfg.c};--ib:${cfg.ib};--ig:${cfg.g};--sev-color:${sev.c};animation-delay:${Math.min(i*35,600)}ms`;
     const lnk=ev.sourceUrl?`<a class="clnk" href="${ev.sourceUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H4M10 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fonte</a>`:'';    card.innerHTML=`
-      <div class="ec-reflect"></div>
-      <div class="ec-specular"></div>
       <div style="display:flex;flex:1">
         <div class="ec-panel" style="background:linear-gradient(160deg,${cfg.cg1||'rgba(12,13,22,.9)'} 0%,rgba(0,0,0,.5) 100%)">
           <div class="ec-icon" style="background:${cfg.ib};box-shadow:0 2px 14px ${cfg.g}">${cfg.i()}</div>
