@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>TerraWatch – Monitor de Desastres</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TerraWatch">
+<meta name="description" content="Monitor de desastres naturais em tempo real">
+<link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#000}
+body{font-family:'Outfit',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ── THEME SYSTEM ── */
+:root{
+  --theme-bg1:#0A0500;--theme-bg2:#1A0800;--theme-accent:#FF4500;--theme-glow:rgba(255,100,0,.4);
+  --theme-particle:#FF6B00;--theme-tint:rgba(255,80,0,.08);
+}
+
+/* ── WINDOW ── */
+#app{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+@media(min-width:860px){
+  #app{inset:18px;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.9)}
+}
+
+/* ── CANVAS BG ── */
+#bg-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  transition:opacity .6s ease;
+  z-index:0;
+}
+
+/* ── NOISE OVERLAY ── */
+#app::after{
+  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity:.025;mix-blend-mode:overlay;
+}
+
+/* ── TITLEBAR ── */
+#titlebar{
+  position:relative;z-index:10;flex-shrink:0;
+  height:48px;
+  display:flex;align-items:center;padding:0 18px;gap:16px;
+  background:rgba(0,0,0,.25);
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.tl-wrap{display:flex;gap:7px;align-items:center;flex-shrink:0}
+.tl{width:12px;height:12px;border-radius:50%;cursor:default;transition:filter .15s}
+.tl-r{background:#FF5F57}.tl-y{background:#FEBC2E}.tl-g{background:#28C840}
+.tl:hover{filter:brightness(1.2)}
+
+#app-brand{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;
+}
+#brand-icon{
+  width:22px;height:22px;border-radius:6px;overflow:hidden;
+  background:linear-gradient(135deg,var(--theme-accent),var(--theme-particle));
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  box-shadow:0 0 12px var(--theme-glow);
+  transition:background .8s,box-shadow .8s;
+}
+#brand-name{font-size:13px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:-.3px}
+
+#tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tb-pill{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.1);
+  font-size:11px;font-weight:600;color:rgba(255,255,255,.6);
+  backdrop-filter:blur(10px);
+  transition:all .3s;
+}
+.tb-pill.live{color:#34C759;background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.2)}
+#live-dot{width:5px;height:5px;border-radius:50%;background:#34C759;animation:livepulse 2s infinite}
+@keyframes livepulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,199,89,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(52,199,89,0)}}
+#refresh-btn{
+  width:28px;height:28px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.5);font-size:14px;transition:all .15s;
+}
+#refresh-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+#refresh-btn:active{transform:scale(.9)}
+#refresh-icon{display:inline-block;transition:.3s}
+
+/* ── FILTER STRIP ── */
+#filter-strip{
+  position:relative;z-index:10;flex-shrink:0;
+  padding:10px 16px;
+  display:flex;gap:7px;overflow-x:auto;
+  background:rgba(0,0,0,.15);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+#filter-strip::-webkit-scrollbar{display:none}
+
+.fchip{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.06);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  font-size:12px;font-weight:600;color:rgba(255,255,255,.55);
+  transition:all .25s ease;
+  backdrop-filter:blur(10px);
+}
+.fchip:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2)}
+.fchip.active{
+  background:var(--chip-bg,rgba(255,255,255,.18));
+  border-color:var(--chip-border,rgba(255,255,255,.3));
+  color:#fff;
+  box-shadow:0 0 16px var(--chip-glow,rgba(255,255,255,.1));
+}
+.fchip-dot{width:6px;height:6px;border-radius:50%;background:var(--chip-color,#fff);box-shadow:0 0 6px var(--chip-color,#fff)}
+.fchip-cnt{
+  font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:10px;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);
+}
+
+/* ── CONTENT ── */
+#content{
+  flex:1;overflow:hidden;position:relative;z-index:5;
+}
+
+/* ── CARDS VIEW ── */
+#cards-view{
+  height:100%;overflow-y:auto;
+  padding:20px 18px 30px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+}
+#cards-view::-webkit-scrollbar{width:4px}
+#cards-view::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+
+/* ── HERO STAT ROW ── */
+#hero-row{
+  display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;
+}
+.hero-stat{
+  flex:1;min-width:100px;
+  padding:16px 18px;border-radius:18px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(20px);
+  transition:all .3s;
+}
+.hero-stat:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.hs-num{font-size:32px;font-weight:800;color:#fff;letter-spacing:-1.5px;line-height:1;margin-bottom:4px}
+.hs-num.red{color:#FF453A}
+.hs-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.3px}
+
+/* ── SECTION LABEL ── */
+.sec-hdr{
+  font-size:11px;font-weight:700;color:rgba(255,255,255,.3);
+  letter-spacing:1.2px;text-transform:uppercase;
+  margin-bottom:12px;padding-left:2px;
+}
+
+/* ── EVENT CARD ── */
+.ev-card{
+  border-radius:20px;
+  padding:0;
+  cursor:pointer;
+  margin-bottom:12px;
+  border:1px solid rgba(255,255,255,.1);
+  overflow:hidden;
+  position:relative;
+  animation:cardIn .4s ease both;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s;
+  background:var(--card-glass-bg);
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.ev-card::before{
+  content:'';position:absolute;inset:0;
+  background:var(--card-tint);
+  z-index:0;pointer-events:none;border-radius:inherit;
+}
+.ev-card:hover{
+  transform:translateY(-2px) scale(1.005);
+  box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12);
+  border-color:rgba(255,255,255,.2);
+}
+.ev-card:active{transform:scale(.985)}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* Card inner */
+.card-inner{position:relative;z-index:1;padding:16px 16px 14px}
+
+/* Top row */
+.c-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:13px}
+.c-icon-area{display:flex;align-items:center;gap:11px}
+/* Animated icon container */
+.c-anim-icon{
+  width:48px;height:48px;flex-shrink:0;
+  position:relative;border-radius:14px;
+  background:var(--icon-bg);
+  border:1px solid rgba(255,255,255,.12);
+  overflow:hidden;
+  box-shadow:0 2px 12px var(--icon-glow);
+}
+.c-anim-icon svg{position:absolute;inset:0;width:100%;height:100%}
+.c-type{font-size:10px;font-weight:700;color:var(--card-accent);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase}
+.c-name{font-size:15px;font-weight:700;color:#fff;line-height:1.25;letter-spacing:-.2px}
+
+/* Severity badge */
+.sev-badge{
+  display:flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:12px;
+  font-size:10px;font-weight:700;letter-spacing:.4px;
+  flex-shrink:0;margin-top:2px;
+  background:var(--sev-bg);
+  color:var(--sev-color);
+  border:1px solid var(--sev-border);
+}
+.sev-blink{width:5px;height:5px;border-radius:50%;background:var(--sev-color);animation:sevpulse 1.5s infinite}
+@keyframes sevpulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Location */
+.c-loc{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+.c-loc-pin{color:rgba(255,255,255,.4);font-size:11px}
+.c-loc-txt{font-size:12px;color:rgba(255,255,255,.5);font-weight:500}
+
+/* Desc */
+.c-desc{font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;font-weight:400;margin-bottom:13px}
+
+/* Footer */
+.c-foot{display:flex;justify-content:space-between;align-items:center;padding-top:11px;border-top:1px solid rgba(255,255,255,.07)}
+.c-src{font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.5px}
+.c-time{font-size:11px;color:rgba(255,255,255,.35);font-weight:500}
+
+/* Loading state */
+#loading-wrap{
+  height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+.loader-ring{
+  width:40px;height:40px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.08);
+  border-top-color:var(--theme-accent);
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{font-size:13px;color:rgba(255,255,255,.3);font-weight:500;letter-spacing:.5px}
+
+/* ── MAP VIEW ── */
+#map-view{height:100%;position:relative;display:none}
+#world-svg{width:100%;height:100%}
+.map-glass{
+  position:absolute;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:13px 15px;
+}
+#map-legend{bottom:18px;left:15px}
+#map-hint{top:14px;right:14px;font-size:11px;color:rgba(255,255,255,.35);font-weight:500}
+.leg-title{font-size:9px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.leg-row{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:transform .2s}
+.leg-row:hover .leg-dot{transform:scale(1.4)}
+.leg-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);transition:color .2s}
+.leg-row.active .leg-lbl{color:#fff}
+
+#map-tt{
+  position:fixed;pointer-events:none;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:10px 14px;
+  display:none;z-index:50;max-width:170px;
+}
+.mtt-type{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.mtt-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.mtt-loc{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* ── MODAL ── */
+#modal-bg{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.5);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:none;align-items:flex-end;justify-content:center;
+  padding:0;
+}
+@media(min-width:600px){#modal-bg{align-items:center;padding:20px}}
+#modal-bg.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+#modal-box{
+  width:100%;max-width:460px;
+  background:rgba(20,20,30,.85);
+  backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px 24px 0 0;overflow:hidden;
+  box-shadow:0 -20px 60px rgba(0,0,0,.5);
+  animation:slideUp .3s ease;
+  max-height:90vh;overflow-y:auto;
+}
+@media(min-width:600px){#modal-box{border-radius:24px}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+
+#m-header{padding:22px 20px 18px;position:relative;overflow:hidden}
+#m-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:200px;height:120px;border-radius:50%;filter:blur(40px);opacity:.4;pointer-events:none}
+#m-drag{width:32px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px}
+#m-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
+#m-icon-wrap{
+  width:54px;height:54px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  overflow:hidden;position:relative;flex-shrink:0;
+}
+#m-icon-wrap svg{position:absolute;inset:0;width:100%;height:100%}
+#m-titles{flex:1;padding-left:13px}
+#m-type{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+#m-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.5px;line-height:1.2}
+#m-close{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,.1);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.6);font-size:14px;transition:all .15s;
+  flex-shrink:0;margin-top:2px;
+}
+#m-close:hover{background:rgba(255,255,255,.2);color:#fff}
+
+#m-body{padding:0 20px 28px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.m-field{background:rgba(255,255,255,.06);border-radius:12px;padding:11px 13px;border:1px solid rgba(255,255,255,.07)}
+.mf-k{font-size:9px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px}
+.mf-v{font-size:13px;font-weight:600;color:rgba(255,255,255,.85)}
+.m-desc{background:rgba(255,255,255,.06);border-radius:12px;padding:13px 14px;margin-bottom:10px;border:1px solid rgba(255,255,255,.07)}
+.m-desc-txt{font-size:13px;color:rgba(255,255,255,.6);line-height:1.65}
+.m-alert{padding:11px 15px;border-radius:12px;display:flex;align-items:center;gap:9px}
+.m-alert-dot{width:8px;height:8px;border-radius:50%;animation:sevpulse 1.5s infinite;flex-shrink:0}
+.m-alert-lbl{font-size:12px;font-weight:700;letter-spacing:.4px}
+
+/* ── ERR BAR ── */
+#err-bar{
+  position:relative;z-index:10;flex-shrink:0;
+  margin:8px 16px 0;padding:8px 13px;border-radius:10px;
+  background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.2);
+  font-size:11px;font-weight:600;color:#FF9F0A;display:none;gap:6px;align-items:center;
+}
+
+/* ── MOBILE NAV ── */
+#mob-nav{
+  position:relative;z-index:10;flex-shrink:0;
+  display:none;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.07);
+  padding:8px 0 env(safe-area-inset-bottom);
+}
+@media(max-width:640px){#mob-nav{display:flex;justify-content:space-around}}
+.mn-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:none;border:none;cursor:pointer;padding:6px 20px;
+  font-size:10px;font-weight:600;color:rgba(255,255,255,.4);font-family:inherit;
+  transition:color .2s;
+}
+.mn-btn.active{color:#fff}
+.mn-ico{font-size:22px}
+
+/* ── VIEW TOGGLE (desktop) ── */
+#view-toggle{
+  display:flex;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:3px;gap:2px;flex-shrink:0;
+}
+.vt-btn{
+  padding:5px 14px;border-radius:8px;border:none;cursor:pointer;
+  font-size:12px;font-weight:600;font-family:inherit;
+  color:rgba(255,255,255,.4);background:transparent;transition:all .2s;
+}
+.vt-btn.active{background:rgba(255,255,255,.14);color:#fff;box-shadow:0 1px 6px rgba(0,0,0,.3)}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- TITLEBAR -->
+  <div id="titlebar">
+    <div class="tl-wrap">
+      <div class="tl tl-r"></div><div class="tl tl-y"></div><div class="tl tl-g"></div>
+    </div>
+    <div id="app-brand">
+      <div id="brand-icon">🌍</div>
+      <span id="brand-name">TerraWatch</span>
+    </div>
+    <div id="tb-right">
+      <div id="view-toggle">
+        <button class="vt-btn active" id="vt-cards" onclick="switchView('cards')">Cards</button>
+        <button class="vt-btn" id="vt-map" onclick="switchView('map')">Mapa</button>
+      </div>
+      <div class="tb-pill live"><div id="live-dot"></div>Ao vivo</div>
+      <div class="tb-pill" id="clock-pill">--:--</div>
+      <div id="refresh-btn" onclick="loadData()"><span id="refresh-icon">↻</span></div>
+    </div>
+  </div>
+
+  <!-- ERR -->
+  <div id="err-bar">⚠ <span id="err-msg"></span></div>
+
+  <!-- FILTER STRIP -->
+  <div id="filter-strip">
+    <div class="fchip active" data-type="all"
+      style="--chip-bg:rgba(255,255,255,.15);--chip-border:rgba(255,255,255,.25);--chip-glow:rgba(255,255,255,.1);--chip-color:#fff"
+      onclick="setFilter('all')">
+      <span class="fchip-dot"></span>Todos <span class="fchip-cnt" id="fc-all">0</span>
+    </div>
+    <div class="fchip" data-type="earthquake"
+      style="--chip-bg:rgba(255,160,50,.12);--chip-border:rgba(255,160,50,.25);--chip-glow:rgba(255,160,50,.15);--chip-color:#FFA032"
+      onclick="setFilter('earthquake')">
+      <span class="fchip-dot"></span>Terremoto <span class="fchip-cnt" id="fc-earthquake">0</span>
+    </div>
+    <div class="fchip" data-type="volcano"
+      style="--chip-bg:rgba(255,70,0,.12);--chip-border:rgba(255,70,0,.25);--chip-glow:rgba(255,70,0,.2);--chip-color:#FF4500"
+      onclick="setFilter('volcano')">
+      <span class="fchip-dot"></span>Vulcão <span class="fchip-cnt" id="fc-volcano">0</span>
+    </div>
+    <div class="fchip" data-type="hurricane"
+      style="--chip-bg:rgba(0,160,255,.12);--chip-border:rgba(0,160,255,.25);--chip-glow:rgba(0,160,255,.15);--chip-color:#00A0FF"
+      onclick="setFilter('hurricane')">
+      <span class="fchip-dot"></span>Furacão <span class="fchip-cnt" id="fc-hurricane">0</span>
+    </div>
+    <div class="fchip" data-type="cyclone"
+      style="--chip-bg:rgba(0,210,160,.12);--chip-border:rgba(0,210,160,.25);--chip-glow:rgba(0,210,160,.15);--chip-color:#00D2A0"
+      onclick="setFilter('cyclone')">
+      <span class="fchip-dot"></span>Ciclone <span class="fchip-cnt" id="fc-cyclone">0</span>
+    </div>
+    <div class="fchip" data-type="storm"
+      style="--chip-bg:rgba(140,100,255,.12);--chip-border:rgba(140,100,255,.25);--chip-glow:rgba(140,100,255,.15);--chip-color:#8C64FF"
+      onclick="setFilter('storm')">
+      <span class="fchip-dot"></span>Tempestade <span class="fchip-cnt" id="fc-storm">0</span>
+    </div>
+    <div class="fchip" data-type="flood"
+      style="--chip-bg:rgba(0,100,255,.12);--chip-border:rgba(0,100,255,.25);--chip-glow:rgba(0,100,255,.15);--chip-color:#0064FF"
+      onclick="setFilter('flood')">
+      <span class="fchip-dot"></span>Enchente <span class="fchip-cnt" id="fc-flood">0</span>
+    </div>
+    <div class="fchip" data-type="tsunami"
+      style="--chip-bg:rgba(0,180,230,.12);--chip-border:rgba(0,180,230,.25);--chip-glow:rgba(0,180,230,.15);--chip-color:#00B4E6"
+      onclick="setFilter('tsunami')">
+      <span class="fchip-dot"></span>Tsunami <span class="fchip-cnt" id="fc-tsunami">0</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+    <!-- CARDS VIEW -->
+    <div id="cards-view">
+      <div id="loading-wrap">
+        <div class="loader-ring"></div>
+        <div class="loader-txt">BUSCANDO EVENTOS AO VIVO</div>
+      </div>
+      <div id="cards-content" style="display:none">
+        <div id="hero-row">
+          <div class="hero-stat"><div class="hs-num red" id="hs-crit">0</div><div class="hs-label">CRÍTICOS</div></div>
+          <div class="hero-stat"><div class="hs-num" id="hs-total">0</div><div class="hs-label">ALERTAS ATIVOS</div></div>
+          <div class="hero-stat"><div class="hs-num" style="font-size:18px;padding-top:6px" id="hs-time">–</div><div class="hs-label">ATUALIZADO ÀS</div></div>
+        </div>
+        <div class="sec-hdr" id="sec-label">TODOS OS ALERTAS</div>
+        <div id="cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- MAP VIEW -->
+    <div id="map-view">
+      <svg id="world-svg" viewBox="0 0 900 480"></svg>
+      <div class="map-glass" id="map-legend">
+        <div class="leg-title">Legenda</div>
+        <div id="leg-items"></div>
+      </div>
+      <div class="map-glass" id="map-hint">Toque nos pontos para ver detalhes</div>
+    </div>
+  </div>
+
+  <!-- MOB NAV -->
+  <div id="mob-nav">
+    <button class="mn-btn active" id="mn-cards" onclick="switchView('cards')">
+      <span class="mn-ico">⊞</span>Cards
+    </button>
+    <button class="mn-btn" id="mn-map" onclick="switchView('map')">
+      <span class="mn-ico">◎</span>Mapa
+    </button>
+  </div>
+</div>
+
+<!-- MAP TOOLTIP -->
+<div id="map-tt">
+  <div class="mtt-type" id="mtt-type"></div>
+  <div class="mtt-name" id="mtt-name"></div>
+  <div class="mtt-loc" id="mtt-loc"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-bg" onclick="mbgClick(event)">
+  <div id="modal-box">
+    <div id="m-header">
+      <div id="m-glow"></div>
+      <div id="m-drag"></div>
+      <div id="m-top">
+        <div id="m-icon-wrap"></div>
+        <div id="m-titles">
+          <div id="m-type"></div>
+          <div id="m-name"></div>
+        </div>
+        <button id="m-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div id="m-body">
+      <div class="m-grid">
+        <div class="m-field"><div class="mf-k">Localização</div><div class="mf-v" id="mf-loc"></div></div>
+        <div class="m-field"><div class="mf-k">Atualizado</div><div class="mf-v" id="mf-time"></div></div>
+        <div class="m-field"><div class="mf-k">Coordenadas</div><div class="mf-v" id="mf-coords"></div></div>
+        <div class="m-field"><div class="mf-k">Fonte</div><div class="mf-v" id="mf-src"></div></div>
+      </div>
+      <div class="m-desc"><div class="mf-k" style="margin-bottom:6px">Descrição</div><div class="m-desc-txt" id="mf-desc"></div></div>
+      <div class="m-alert" id="m-alert">
+        <div class="m-alert-dot" id="m-adot"></div>
+        <div class="m-alert-lbl" id="m-albl"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
+const TYPES = {
+  earthquake:{label:"Terremoto",  color:"#FFA032",glow:"rgba(255,160,50,.3)",
+    cardGlass:"rgba(60,30,0,.45)",cardTint:"rgba(255,120,0,.06)",
+    iconBg:"rgba(255,100,0,.2)",
+    bg:{c1:"#0A0500",c2:"#180C00",particle:"#FF6B00",mode:"ember"},
+    svgIcon: mkEarthquakeIcon},
+  volcano:{label:"Vulcão",        color:"#FF4500",glow:"rgba(255,69,0,.4)",
+    cardGlass:"rgba(50,15,0,.5)",cardTint:"rgba(255,50,0,.07)",
+    iconBg:"rgba(255,60,0,.2)",
+    bg:{c1:"#080200",c2:"#1A0500",particle:"#FF3800",mode:"ember"},
+    svgIcon: mkVolcanoIcon},
+  hurricane:{label:"Furacão",     color:"#00A0FF",glow:"rgba(0,160,255,.3)",
+    cardGlass:"rgba(0,20,50,.5)",cardTint:"rgba(0,120,255,.06)",
+    iconBg:"rgba(0,140,255,.2)",
+    bg:{c1:"#000818",c2:"#000F2A",particle:"#005FC0",mode:"wind"},
+    svgIcon: mkHurricaneIcon},
+  cyclone:{label:"Ciclone",       color:"#00D2A0",glow:"rgba(0,210,160,.3)",
+    cardGlass:"rgba(0,30,25,.5)",cardTint:"rgba(0,200,150,.05)",
+    iconBg:"rgba(0,200,140,.2)",
+    bg:{c1:"#000D08",c2:"#001A12",particle:"#00A87A",mode:"wind"},
+    svgIcon: mkCycloneIcon},
+  storm:{label:"Tempestade",      color:"#8C64FF",glow:"rgba(140,100,255,.3)",
+    cardGlass:"rgba(15,8,40,.5)",cardTint:"rgba(120,80,255,.06)",
+    iconBg:"rgba(120,80,255,.2)",
+    bg:{c1:"#050308",c2:"#0A0618",particle:"#6040CC",mode:"lightning"},
+    svgIcon: mkStormIcon},
+  flood:{label:"Enchente",        color:"#0064FF",glow:"rgba(0,100,255,.3)",
+    cardGlass:"rgba(0,15,50,.5)",cardTint:"rgba(0,80,255,.06)",
+    iconBg:"rgba(0,90,255,.2)",
+    bg:{c1:"#000510",c2:"#000C22",particle:"#0050CC",mode:"wave"},
+    svgIcon: mkFloodIcon},
+  tsunami:{label:"Tsunami",       color:"#00B4E6",glow:"rgba(0,180,230,.3)",
+    cardGlass:"rgba(0,20,40,.5)",cardTint:"rgba(0,160,220,.06)",
+    iconBg:"rgba(0,160,210,.2)",
+    bg:{c1:"#00080F",c2:"#00101E",particle:"#0088BB",mode:"wave"},
+    svgIcon: mkTsunamiIcon},
+};
+const SEV = {
+  critical:{label:"CRÍTICO",  color:"#FF453A",bg:"rgba(255,69,58,.12)",border:"rgba(255,69,58,.25)"},
+  high:    {label:"ALTO",     color:"#FF9F0A",bg:"rgba(255,159,10,.1)",border:"rgba(255,159,10,.2)"},
+  medium:  {label:"MÉDIO",    color:"#FFD60A",bg:"rgba(255,214,10,.08)",border:"rgba(255,214,10,.15)"},
+  low:     {label:"BAIXO",    color:"#30D158",bg:"rgba(48,209,88,.08)",border:"rgba(48,209,88,.15)"},
+};
+const BG_ALL = {c1:"#040408",c2:"#080810",particle:"#3040AA",mode:"stars"};
+
+const SEED = [
+  {id:"s1",type:"volcano",   name:"Monte Etna em Erupção",         location:"Sicília, Itália",         lat:37.75,lng:15.0,  severity:"high",    description:"Erupção ativa com fluxo de lava e coluna de cinzas a 3.200m de altitude.",time:"há 2h",  source:"INGV"},
+  {id:"s2",type:"earthquake",name:"Terremoto M6.1",                location:"Japão, Mar do Japão",     lat:38.3, lng:142.4, severity:"high",    description:"Abalo M6.1 a 40km de profundidade, sem alerta de tsunami emitido.",time:"há 4h",  source:"USGS"},
+  {id:"s3",type:"hurricane", name:"Furacão Beryl – Categoria 3",   location:"Caribe Oriental",         lat:13.5, lng:-60.0, severity:"critical",description:"Ventos de 185 km/h, em rota para o noroeste. Alertas emitidos para 5 ilhas.",time:"há 1h",  source:"NHC"},
+  {id:"s4",type:"flood",     name:"Inundações no Bangladesh",      location:"Sylhet, Bangladesh",      lat:24.9, lng:91.9,  severity:"critical",description:"Chuvas extremas causaram inundações em 12 distritos, 400 mil pessoas afetadas.",time:"há 6h",  source:"BDMD"},
+  {id:"s5",type:"earthquake",name:"Terremoto M5.4",                location:"Santiago, Chile",         lat:-33.4,lng:-70.6, severity:"medium",  description:"Sismo moderado sentido na capital. Sem danos estruturais confirmados.",time:"há 8h",  source:"CSN"},
+  {id:"s6",type:"cyclone",   name:"Ciclone Hidaya – Cat. 2",       location:"Costa Leste, Tanzânia",   lat:-9.0, lng:40.0,  severity:"high",    description:"Intensificando-se no Oceano Índico, se aproxima da costa africana.",time:"há 3h",  source:"RSMC"},
+  {id:"s7",type:"storm",     name:"Tempestade Severa no Texas",    location:"Texas, EUA",              lat:31.5, lng:-99.0, severity:"medium",  description:"Supercélula com granizo de 5cm e 3 tornados confirmados.",time:"há 5h",  source:"NWS"},
+  {id:"s8",type:"tsunami",   name:"Alerta de Tsunami – Peru",      location:"Lima, Peru",              lat:-12.0,lng:-77.1, severity:"high",    description:"Alerta emitido após M7.2. Populações costeiras em processo de evacuação.",time:"há 30min",source:"PTWC"},
+  {id:"s9",type:"volcano",   name:"Fagradalsfjall – Nova Fissura", location:"Reykjanes, Islândia",     lat:63.9, lng:-22.3, severity:"medium",  description:"Nova fissura aberta. Fluxo de lava movendo-se para sudoeste.",time:"há 12h", source:"IMO"},
+  {id:"s10",type:"earthquake",name:"Terremoto M4.8",               location:"Izmir, Turquia",          lat:38.4, lng:27.1,  severity:"low",     description:"Sismo leve, sem danos reportados. Sensível na cidade de Izmir.",time:"há 10h", source:"AFAD"},
+];
+
+// ═══════════════════════════════════════════════════════
+// SVG ANIMATED ICONS
+// ═══════════════════════════════════════════════════════
+function mkVolcanoIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="lavaglow" cx="50%" cy="80%" r="60%">
+      <stop offset="0%" stop-color="#FF6B00" stop-opacity=".8"/>
+      <stop offset="100%" stop-color="#FF2200" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="48" height="48" fill="url(#lavaglow)"/>
+  <!-- Mountain -->
+  <path d="M24 8 L38 36 H10 Z" fill="#6B2800" stroke="#FF4500" stroke-width="1" stroke-linejoin="round"/>
+  <!-- Crater -->
+  <ellipse cx="24" cy="8" rx="4" ry="2.5" fill="#FF3000"/>
+  <!-- Lava flow -->
+  <path d="M22 8 Q20 20 18 30" stroke="#FF5500" stroke-width="1.5" stroke-linecap="round" opacity=".7">
+    <animate attributeName="opacity" values=".3;.9;.3" dur="1.8s" repeatCount="indefinite"/>
+  </path>
+  <!-- Ember particles -->
+  <circle cx="22" cy="14" r="1" fill="#FFAA00">
+    <animate attributeName="cy" values="14;4;14" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0;0" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="25" cy="10" r="1.2" fill="#FF6600">
+    <animate attributeName="cy" values="10;1;10" dur="1.6s" begin=".4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0;0" dur="1.6s" begin=".4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="27" cy="12" r=".8" fill="#FFCC00">
+    <animate attributeName="cy" values="12;2;12" dur="1s" begin=".8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0;0" dur="1s" begin=".8s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Glow pulse -->
+  <ellipse cx="24" cy="36" rx="10" ry="3" fill="#FF4500" opacity=".3">
+    <animate attributeName="opacity" values=".15;.4;.15" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+</svg>`;
+}
+
+function mkEarthquakeIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ground -->
+  <rect x="4" y="30" width="40" height="10" rx="2" fill="#3A2200"/>
+  <!-- Crack -->
+  <path d="M24 40 L22 32 L26 26 L22 20 L26 14" stroke="#FFA032" stroke-width="2" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="translate" values="-1,0;1,0;-1,0" dur=".15s" repeatCount="indefinite"/>
+  </path>
+  <!-- Shockwave rings -->
+  <circle cx="24" cy="30" r="6" stroke="#FFA032" stroke-width="1" fill="none" opacity="0">
+    <animate attributeName="r" values="4;18" dur="1.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".7;0" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="24" cy="30" r="6" stroke="#FF6B00" stroke-width="1" fill="none" opacity="0">
+    <animate attributeName="r" values="4;18" dur="1.5s" begin=".5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".5;0" dur="1.5s" begin=".5s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Exclamation -->
+  <text x="20" y="12" font-size="14" font-weight="900" fill="#FFA032" font-family="system-ui">⚡</text>
+</svg>`;
+}
+
+function mkHurricaneIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="hglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00A0FF" stop-opacity=".4"/>
+      <stop offset="100%" stop-color="#0040AA" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="24" cy="24" r="20" fill="url(#hglow)"/>
+  <!-- Spiral arms -->
+  <path d="M24 24 Q30 18 36 20 Q42 22 38 30 Q34 38 24 36 Q14 34 12 24 Q10 14 18 10 Q24 7 28 12" 
+    stroke="#00A0FF" stroke-width="2" fill="none" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="4s" repeatCount="indefinite"/>
+  </path>
+  <!-- Eye -->
+  <circle cx="24" cy="24" r="4" fill="none" stroke="#80CFFF" stroke-width="1.5">
+    <animate attributeName="r" values="3;5;3" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="24" cy="24" r="2" fill="#00A0FF" opacity=".6"/>
+</svg>`;
+}
+
+function mkCycloneIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wind streaks -->
+  <path d="M6 16 Q16 12 26 16 Q36 20 44 16" stroke="#00D2A0" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".8">
+    <animate attributeName="d" values="M6 16 Q16 12 26 16 Q36 20 44 16;M6 16 Q16 20 26 16 Q36 12 44 16;M6 16 Q16 12 26 16 Q36 20 44 16" dur="2s" repeatCount="indefinite"/>
+  </path>
+  <path d="M6 24 Q16 20 26 24 Q36 28 44 24" stroke="#00D2A0" stroke-width="2" fill="none" stroke-linecap="round">
+    <animate attributeName="d" values="M6 24 Q16 20 26 24 Q36 28 44 24;M6 24 Q16 28 26 24 Q36 20 44 24;M6 24 Q16 20 26 24 Q36 28 44 24" dur="1.8s" begin=".3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M6 32 Q16 28 26 32 Q36 36 44 32" stroke="#00D2A0" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".8">
+    <animate attributeName="d" values="M6 32 Q16 28 26 32 Q36 36 44 32;M6 32 Q16 36 26 32 Q36 28 44 32;M6 32 Q16 28 26 32 Q36 36 44 32" dur="2.2s" begin=".6s" repeatCount="indefinite"/>
+  </path>
+  <!-- Rotating dot indicator -->
+  <circle cx="24" cy="24" r="3" fill="#00D2A0">
+    <animate attributeName="opacity" values="1;.3;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>`;
+}
+
+function mkStormIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cloud -->
+  <path d="M12 28 Q8 28 8 24 Q8 18 14 18 Q15 12 22 12 Q28 12 30 16 Q36 16 36 22 Q36 28 30 28 Z"
+    fill="#2A1A50" stroke="#8C64FF" stroke-width="1"/>
+  <!-- Lightning bolt -->
+  <path d="M26 16 L20 26 L24 26 L18 38 L30 24 L25 24 Z" fill="#FFD60A">
+    <animate attributeName="opacity" values="1;0.1;1;0.1;1" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Glow behind bolt -->
+  <path d="M26 16 L20 26 L24 26 L18 38 L30 24 L25 24 Z" fill="#8C64FF" opacity=".4" filter="blur(3px)">
+    <animate attributeName="opacity" values=".4;0;.4;0;.4" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Rain drops -->
+  <line x1="16" y1="32" x2="14" y2="38" stroke="#8C64FF" stroke-width="1.2" stroke-linecap="round" opacity=".6">
+    <animate attributeName="opacity" values=".6;0;.6" dur="1s" repeatCount="indefinite"/>
+  </line>
+  <line x1="22" y1="32" x2="20" y2="38" stroke="#8C64FF" stroke-width="1.2" stroke-linecap="round" opacity=".6">
+    <animate attributeName="opacity" values=".6;0;.6" dur="1s" begin=".3s" repeatCount="indefinite"/>
+  </line>
+</svg>`;
+}
+
+function mkFloodIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="watergr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0064FF" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#0030AA" stop-opacity=".9"/>
+    </linearGradient>
+  </defs>
+  <!-- House sinking -->
+  <path d="M20 22 L28 22 L28 30 L20 30 Z" fill="#1A3A20" stroke="#00CC44" stroke-width=".8" opacity=".7"/>
+  <path d="M18 22 L24 15 L30 22 Z" fill="#0A2010" stroke="#00AA33" stroke-width=".8" opacity=".7"/>
+  <!-- Water layers with animation -->
+  <path d="M4 30 Q12 26 20 30 Q28 34 36 30 Q42 27 44 30 L44 40 L4 40 Z" fill="url(#watergr)">
+    <animate attributeName="d" 
+      values="M4 30 Q12 26 20 30 Q28 34 36 30 Q42 27 44 30 L44 40 L4 40 Z;M4 30 Q12 34 20 30 Q28 26 36 30 Q42 33 44 30 L44 40 L4 40 Z;M4 30 Q12 26 20 30 Q28 34 36 30 Q42 27 44 30 L44 40 L4 40 Z"
+      dur="2s" repeatCount="indefinite"/>
+  </path>
+  <!-- Surface ripple -->
+  <ellipse cx="24" cy="30" rx="8" ry="2" fill="none" stroke="#00A0FF" stroke-width="1" opacity=".5">
+    <animate attributeName="rx" values="4;14;4" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".7;0;.7" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+</svg>`;
+}
+
+function mkTsunamiIcon(){
+  return `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tgr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00B4E6" stop-opacity=".8"/>
+      <stop offset="100%" stop-color="#0050AA" stop-opacity=".6"/>
+    </linearGradient>
+  </defs>
+  <!-- Big wave -->
+  <path d="M4 32 Q10 20 16 22 Q20 24 22 18 Q24 12 28 16 Q32 20 36 14 Q40 10 44 18 L44 38 Q36 34 28 36 Q20 38 12 36 Z" fill="url(#tgr)">
+    <animate attributeName="d" 
+      values="M4 32 Q10 20 16 22 Q20 24 22 18 Q24 12 28 16 Q32 20 36 14 Q40 10 44 18 L44 38 Q36 34 28 36 Q20 38 12 36 Z;
+              M4 34 Q10 22 16 20 Q20 18 22 14 Q24 10 28 14 Q32 18 36 12 Q40 8 44 16 L44 38 Q36 32 28 34 Q20 36 12 34 Z;
+              M4 32 Q10 20 16 22 Q20 24 22 18 Q24 12 28 16 Q32 20 36 14 Q40 10 44 18 L44 38 Q36 34 28 36 Q20 38 12 36 Z"
+      dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Crest foam -->
+  <path d="M22 18 Q24 14 26 16" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity=".7">
+    <animate attributeName="opacity" values=".7;.3;.7" dur="1.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Spray droplets -->
+  <circle cx="28" cy="14" r="1.5" fill="white" opacity=".6">
+    <animate attributeName="cy" values="14;8;14" dur="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".6;0;.6" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="32" cy="12" r="1" fill="white" opacity=".5">
+    <animate attributeName="cy" values="12;6;12" dur="1.3s" begin=".3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".5;0;.5" dur="1.3s" begin=".3s" repeatCount="indefinite"/>
+  </circle>
+</svg>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// CANVAS BACKGROUND SYSTEM
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame;
+let currentBgMode = 'stars';
+let targetBg = {c1:'#040408',c2:'#080810',particle:'#3040AA'};
+let currentBgColors = {c1:'#040408',c2:'#080810'};
+
+function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;}
+window.addEventListener('resize',()=>{resizeCanvas();initParticles();});
+resizeCanvas();
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return{r,g,b};
+}
+function lerpColor(a,b,t){
+  const ca=hexToRgb(a),cb=hexToRgb(b);
+  return`rgb(${Math.round(ca.r+(cb.r-ca.r)*t)},${Math.round(ca.g+(cb.g-ca.g)*t)},${Math.round(ca.b+(cb.b-ca.b)*t)})`;
+}
+
+class Particle{
+  constructor(mode,pColor){
+    this.mode=mode;
+    this.color=pColor||'#4060CC';
+    this.reset();
+  }
+  reset(){
+    const W=canvas.width,H=canvas.height;
+    if(this.mode==='ember'){
+      this.x=W*.3+Math.random()*W*.4;
+      this.y=H+10;
+      this.vx=(Math.random()-.5)*1.5;
+      this.vy=-(1+Math.random()*2.5);
+      this.r=.8+Math.random()*2;
+      this.life=1;this.decay=.004+Math.random()*.006;
+    } else if(this.mode==='wave'||this.mode==='wind'){
+      this.x=Math.random()<.5?-10:W+10;
+      this.y=Math.random()*H;
+      this.vx=(this.mode==='wind'?2:1.5)*(this.x<0?1:-1);
+      this.vy=(Math.random()-.5)*.5;
+      this.r=.5+Math.random()*1.5;
+      this.life=1;this.decay=.003+Math.random()*.005;
+    } else if(this.mode==='lightning'){
+      this.x=Math.random()*W;this.y=0;
+      this.vx=(Math.random()-.5)*.3;this.vy=.5+Math.random()*1.5;
+      this.r=.5+Math.random();
+      this.life=Math.random();this.decay=.008+Math.random()*.012;
+    } else { // stars
+      this.x=Math.random()*canvas.width;
+      this.y=Math.random()*canvas.height;
+      this.vx=(Math.random()-.5)*.1;this.vy=(Math.random()-.5)*.1;
+      this.r=.3+Math.random()*1.2;
+      this.life=Math.random();this.decay=.001+Math.random()*.002;
+    }
+  }
+  update(){
+    this.x+=this.vx;this.y+=this.vy;
+    this.life-=this.decay;
+    if(this.mode==='ember'){this.vx+=(Math.random()-.5)*.15;}
+    if(this.life<=0)this.reset();
+  }
+  draw(){
+    const rgb=hexToRgb(this.color);
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${this.life*.9})`;
+    ctx.fill();
+    if(this.r>1){
+      ctx.beginPath();ctx.arc(this.x,this.y,this.r*2,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${rgb.r},${rgb.g},${rgb.b},${this.life*.15})`;ctx.fill();
+    }
+  }
+}
+
+function initParticles(){
+  const mode=currentBgMode;
+  const W=canvas.width,H=canvas.height;
+  const count=mode==='stars'?120:mode==='ember'?60:mode==='lightning'?40:80;
+  const pColor=targetBg.particle;
+  particles=[];
+  for(let i=0;i<count;i++){
+    const p=new Particle(mode,pColor);
+    if(mode==='stars'){p.x=Math.random()*W;p.y=Math.random()*H;p.life=Math.random();}
+    else{p.life=Math.random();}
+    particles.push(p);
+  }
+}
+
+let lerpT=0;
+function drawBg(){
+  lerpT=Math.min(lerpT+.015,1);
+  const c1=lerpColor(currentBgColors.c1,targetBg.c1,lerpT);
+  const c2=lerpColor(currentBgColors.c2,targetBg.c2,lerpT);
+  if(lerpT>=.99){currentBgColors={c1:targetBg.c1,c2:targetBg.c2};}
+  const W=canvas.width,H=canvas.height;
+  const grad=ctx.createRadialGradient(W*.5,H*.3,0,W*.5,H*.5,H*.9);
+  grad.addColorStop(0,c2);grad.addColorStop(1,c1);
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+  // Subtle vignette
+  const vig=ctx.createRadialGradient(W/2,H/2,H*.2,W/2,H/2,H*.9);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,.5)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+}
+
+function animate(){
+  animFrame=requestAnimationFrame(animate);
+  drawBg();
+  particles.forEach(p=>{p.update();p.draw();});
+}
+initParticles();
+animate();
+
+function setTheme(type){
+  const cfg=type==='all'?{bg:BG_ALL}:TYPES[type];
+  if(!cfg)return;
+  const bg=cfg.bg;
+  targetBg={c1:bg.c1,c2:bg.c2,particle:bg.particle,mode:bg.mode};
+  lerpT=0;
+  currentBgMode=bg.mode;
+  initParticles();
+  // update brand icon
+  const acc=type==='all'?'#4060CC':TYPES[type].color;
+  const p=type==='all'?'#6080FF':TYPES[type].glow;
+  document.getElementById('brand-icon').style.background=`linear-gradient(135deg,${acc},${acc}99)`;
+  document.getElementById('brand-icon').style.boxShadow=`0 0 14px ${p}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE & DATA
+// ═══════════════════════════════════════════════════════
+let events=[...SEED],filter='all',view='cards',lastUpdate=null,isLoading=false;
+
+setInterval(()=>{
+  const t=new Date().toTimeString().slice(0,5);
+  const el=document.getElementById('clock-pill');if(el)el.textContent=t;
+},1000);
+
+async function loadData(){
+  if(isLoading)return;
+  isLoading=true;
+  const icon=document.getElementById('refresh-icon');
+  icon.style.animation='spin .7s linear infinite';
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",max_tokens:1000,
+      tools:[{type:"web_search_20250305",name:"web_search"}],
+      system:`Monitor de desastres naturais. Use web_search para buscar eventos REAIS ativos agora. Retorne APENAS JSON puro (sem markdown, sem texto): [{"id":"1","type":"earthquake|volcano|hurricane|cyclone|storm|flood|tsunami","name":"Nome","location":"Local","lat":0.0,"lng":0.0,"severity":"critical|high|medium|low","description":"Descrição em português","time":"há Xh","source":"Fonte"}]`,
+      messages:[{role:"user",content:"Busque os principais desastres naturais ativos agora e retorne JSON."}]
+    })});
+    const data=await r.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const m=text.match(/\[[\s\S]*?\]/);
+    if(m){const p=JSON.parse(m[0]);if(p.length){events=p;lastUpdate=new Date();hideErr();}}
+    else throw 0;
+  }catch{showErr('Dados ao vivo indisponíveis — exibindo demonstração');}
+  isLoading=false;icon.style.animation='none';
+  renderAll();
+}
+function showErr(m){const b=document.getElementById('err-bar');document.getElementById('err-msg').textContent=m;b.style.display='flex';}
+function hideErr(){document.getElementById('err-bar').style.display='none';}
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function renderAll(){
+  updateFilters();
+  if(view==='cards')renderCards();else renderMap();
+}
+function updateFilters(){
+  const types=['earthquake','volcano','hurricane','cyclone','storm','flood','tsunami'];
+  document.getElementById('fc-all').textContent=events.length;
+  types.forEach(t=>{const el=document.getElementById('fc-'+t);if(el)el.textContent=events.filter(e=>e.type===t).length;});
+}
+
+function renderCards(){
+  document.getElementById('loading-wrap').style.display='none';
+  document.getElementById('cards-content').style.display='block';
+  const filtered=filter==='all'?events:events.filter(e=>e.type===filter);
+  const crit=events.filter(e=>e.severity==='critical').length;
+  document.getElementById('hs-crit').textContent=crit;
+  document.getElementById('hs-total').textContent=events.length;
+  document.getElementById('hs-time').textContent=lastUpdate?lastUpdate.toTimeString().slice(0,5):'–';
+  document.getElementById('sec-label').textContent=filter==='all'?'TODOS OS ALERTAS':(TYPES[filter]?.label||'').toUpperCase()+' — '+filtered.length+' EVENTOS';
+  const grid=document.getElementById('cards-grid');
+  grid.innerHTML='';
+  if(!filtered.length){grid.innerHTML='<div style="text-align:center;padding:60px 0;color:rgba(255,255,255,.2);font-size:14px;font-weight:500">Nenhum alerta para este filtro</div>';return;}
+  filtered.forEach((ev,i)=>{
+    const cfg=TYPES[ev.type]||TYPES.earthquake;
+    const sev=SEV[ev.severity]||SEV.medium;
+    const card=document.createElement('div');
+    card.className='ev-card';
+    card.style.cssText=`--card-glass-bg:${cfg.cardGlass};--card-tint:${cfg.cardTint};--card-accent:${cfg.color};--icon-bg:${cfg.iconBg};--icon-glow:${cfg.glow};animation-delay:${i*50}ms`;
+    card.innerHTML=`<div class="card-inner">
+      <div class="c-top">
+        <div class="c-icon-area">
+          <div class="c-anim-icon">${cfg.svgIcon()}</div>
+          <div><div class="c-type">${cfg.label}</div><div class="c-name">${ev.name}</div></div>
+        </div>
+        <div class="sev-badge" style="--sev-bg:${sev.bg};--sev-color:${sev.color};--sev-border:${sev.border}">
+          <div class="sev-blink"></div>${sev.label}
+        </div>
+      </div>
+      <div class="c-loc"><span class="c-loc-pin">📍</span><span class="c-loc-txt">${ev.location}</span></div>
+      <div class="c-desc">${ev.description}</div>
+      <div class="c-foot">
+        <span class="c-src">${ev.source}</span>
+        <span class="c-time">${ev.time}</span>
+      </div>
+    </div>`;
+    card.onclick=()=>openModal(ev);
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════════════════════
+const NS="http://www.w3.org/2000/svg";
+function proj(lat,lng,W,H){return[(lng+180)/360*W,(90-lat)/180*H];}
+function renderMap(){
+  const svg=document.getElementById('world-svg');
+  const W=900,H=480;svg.innerHTML='';
+  // transparent bg (canvas shows through)
+  const bg=document.createElementNS(NS,'rect');bg.setAttribute('width',W);bg.setAttribute('height',H);bg.setAttribute('fill','rgba(0,0,0,.1)');svg.appendChild(bg);
+  // grid
+  for(let lg=-180;lg<=180;lg+=30){const[x]=proj(0,lg,W,H);const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('y1',0);l.setAttribute('x2',x);l.setAttribute('y2',H);l.setAttribute('stroke','rgba(255,255,255,.05)');l.setAttribute('stroke-width','0.7');svg.appendChild(l);}
+  for(let lt=-90;lt<=90;lt+=30){const[,y]=proj(lt,0,W,H);const l=document.createElementNS(NS,'line');l.setAttribute('x1',0);l.setAttribute('y1',y);l.setAttribute('x2',W);l.setAttribute('y2',y);l.setAttribute('stroke','rgba(255,255,255,.05)');l.setAttribute('stroke-width','0.7');svg.appendChild(l);}
+  // lands
+  [
+    "M 170,60 L 220,55 L 235,70 L 255,80 L 260,110 L 240,130 L 235,150 L 210,155 L 195,170 L 185,155 L 175,140 L 165,115 L 155,100 L 150,80 Z",
+    "M 215,180 L 240,175 L 255,185 L 260,210 L 255,240 L 245,270 L 230,285 L 215,275 L 205,255 L 200,230 L 205,210 Z",
+    "M 420,58 L 452,54 L 472,64 L 477,78 L 467,88 L 455,83 L 440,89 L 428,84 L 414,73 Z",
+    "M 430,108 L 462,103 L 478,118 L 482,150 L 477,192 L 465,217 L 450,225 L 434,217 L 418,190 L 413,158 L 418,128 Z",
+    "M 490,48 L 592,43 L 652,52 L 682,68 L 702,80 L 696,100 L 668,112 L 640,116 L 598,120 L 558,116 L 528,120 L 508,110 L 488,95 L 474,74 Z",
+    "M 640,240 L 682,234 L 702,243 L 712,264 L 700,284 L 674,290 L 650,280 L 633,264 L 634,249 Z",
+    "M 664,74 L 676,70 L 682,80 L 672,86 L 664,82 Z",
+    "M 528,118 L 557,116 L 567,134 L 561,156 L 545,159 L 530,150 L 524,134 Z",
+  ].forEach(d=>{
+    const p=document.createElementNS(NS,'path');p.setAttribute('d',d);
+    p.setAttribute('fill','rgba(255,255,255,.07)');p.setAttribute('stroke','rgba(255,255,255,.12)');p.setAttribute('stroke-width','0.8');
+    svg.appendChild(p);
+  });
+  // markers
+  const filtered=filter==='all'?events:events.filter(e=>e.type===filter);
+  filtered.forEach(ev=>{
+    const cfg=TYPES[ev.type];if(!cfg)return;
+    const[x,y]=proj(ev.lat,ev.lng,W,H);
+    for(let i=0;i<2;i++){
+      const ring=document.createElementNS(NS,'circle');
+      ring.setAttribute('cx',x);ring.setAttribute('cy',y);ring.setAttribute('r','5');ring.setAttribute('fill','none');ring.setAttribute('stroke',cfg.color);ring.setAttribute('stroke-width',i?'1':'1.5');
+      const a1=document.createElementNS(NS,'animate');a1.setAttribute('attributeName','r');a1.setAttribute('from','5');a1.setAttribute('to','24');a1.setAttribute('dur','2.4s');a1.setAttribute('begin',i?'0.7s':'0s');a1.setAttribute('repeatCount','indefinite');
+      const a2=document.createElementNS(NS,'animate');a2.setAttribute('attributeName','opacity');a2.setAttribute('from','0.7');a2.setAttribute('to','0');a2.setAttribute('dur','2.4s');a2.setAttribute('begin',i?'0.7s':'0s');a2.setAttribute('repeatCount','indefinite');
+      ring.appendChild(a1);ring.appendChild(a2);svg.appendChild(ring);
+    }
+    const glow=document.createElementNS(NS,'circle');
+    glow.setAttribute('cx',x);glow.setAttribute('cy',y);glow.setAttribute('r','9');glow.setAttribute('fill',cfg.color);glow.setAttribute('opacity','.15');svg.appendChild(glow);
+    const dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('r','5.5');dot.setAttribute('fill',cfg.color);dot.setAttribute('stroke','rgba(255,255,255,.3)');dot.setAttribute('stroke-width','1.5');
+    dot.style.filter=`drop-shadow(0 0 6px ${cfg.color})`;dot.style.cursor='pointer';
+    dot.addEventListener('click',()=>openModal(ev));
+    dot.addEventListener('touchstart',e=>{e.preventDefault();openModal(ev);},{passive:false});
+    dot.addEventListener('mouseenter',()=>{
+      const tt=document.getElementById('map-tt');
+      document.getElementById('mtt-type').textContent=cfg.label.toUpperCase();
+      document.getElementById('mtt-type').style.color=cfg.color;
+      document.getElementById('mtt-name').textContent=ev.name;
+      document.getElementById('mtt-loc').textContent=ev.location;
+      const svgEl=document.getElementById('world-svg');
+      const rect=svgEl.getBoundingClientRect();
+      const sx=rect.width/900,sy=rect.height/480;
+      tt.style.left=(x*sx+rect.left+14)+'px';tt.style.top=(y*sy+rect.top-44)+'px';tt.style.display='block';
+    });
+    dot.addEventListener('mouseleave',()=>document.getElementById('map-tt').style.display='none');
+    svg.appendChild(dot);
+  });
+  // legend
+  const leg=document.getElementById('leg-items');leg.innerHTML='';
+  Object.entries(TYPES).forEach(([k,cfg])=>{
+    const cnt=events.filter(e=>e.type===k).length;if(!cnt)return;
+    const item=document.createElement('div');item.className='leg-row'+(filter===k?' active':'');
+    item.innerHTML=`<div class="leg-dot" style="background:${cfg.color};box-shadow:0 0 6px ${cfg.color}"></div><span class="leg-lbl">${cfg.label} (${cnt})</span>`;
+    item.onclick=()=>setFilter(filter===k?'all':k);
+    leg.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// FILTER / VIEW
+// ═══════════════════════════════════════════════════════
+function setFilter(f){
+  filter=f;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.toggle('active',c.dataset.type===f));
+  setTheme(f);
+  if(view==='cards')renderCards();else renderMap();
+}
+function switchView(v){
+  view=v;
+  document.getElementById('cards-view').style.display=v==='cards'?'block':'none';
+  document.getElementById('map-view').style.display=v==='map'?'block':'none';
+  document.getElementById('vt-cards').classList.toggle('active',v==='cards');
+  document.getElementById('vt-map').classList.toggle('active',v==='map');
+  document.getElementById('mn-cards').classList.toggle('active',v==='cards');
+  document.getElementById('mn-map').classList.toggle('active',v==='map');
+  if(v==='map')renderMap();else renderCards();
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════
+function openModal(ev){
+  const cfg=TYPES[ev.type]||TYPES.earthquake;
+  const sev=SEV[ev.severity]||SEV.medium;
+  document.getElementById('m-icon-wrap').innerHTML=cfg.svgIcon();
+  document.getElementById('m-glow').style.background=cfg.glow.replace('rgba','rgba').replace(')',',1)');
+  document.getElementById('m-type').textContent=cfg.label.toUpperCase();
+  document.getElementById('m-type').style.color=cfg.color;
+  document.getElementById('m-name').textContent=ev.name;
+  document.getElementById('mf-loc').textContent=ev.location;
+  document.getElementById('mf-time').textContent=ev.time;
+  document.getElementById('mf-coords').textContent=`${(ev.lat||0).toFixed(2)}°, ${(ev.lng||0).toFixed(2)}°`;
+  document.getElementById('mf-src').textContent=ev.source;
+  document.getElementById('mf-desc').textContent=ev.description;
+  document.getElementById('m-alert').style.cssText=`background:${sev.bg};border:1px solid ${sev.border};padding:11px 15px;border-radius:12px;display:flex;align-items:center;gap:9px`;
+  document.getElementById('m-adot').style.background=sev.color;
+  document.getElementById('m-albl').textContent='Nível de alerta: '+sev.label;
+  document.getElementById('m-albl').style.color=sev.color;
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function mbgClick(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+setTheme('all');
+renderAll();
+document.getElementById('loading-wrap').style.display='none';
+document.getElementById('cards-content').style.display='block';
+loadData();
+</script>
+</body>
+</html>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
