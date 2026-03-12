@@ -113,7 +113,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 .hero-label::after{content:'';flex:1;height:.5px;background:linear-gradient(90deg,rgba(255,255,255,.07),transparent)}
 .hrow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
 @media(max-width:480px){.hrow{grid-template-columns:repeat(2,1fr)}}
-.hs{padding:10px 12px 9px;border-radius:0;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-top:.5px solid rgba(255,255,255,.2);backdrop-filter:blur(36px) saturate(200%);-webkit-backdrop-filter:blur(36px) saturate(200%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.16),inset 1px 0 0 rgba(255,255,255,.05),0 4px 16px rgba(0,0,0,.3);transition:all .3s;position:relative;overflow:hidden}
+.hs{padding:10px 12px 9px;border-radius:0;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-top:.5px solid rgba(255,255,255,.2);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.16),inset 1px 0 0 rgba(255,255,255,.05),0 4px 16px rgba(0,0,0,.3);transition:all .3s;position:relative;overflow:hidden}
 .hs::before{content:'';position:absolute;top:0;left:0;right:0;height:.5px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}
 .hs:hover{background:rgba(18,20,32,.95);transform:translateY(-2px);box-shadow:var(--specb),0 12px 36px rgba(0,0,0,.4)}
 .hs.red{border-color:rgba(255,59,48,.25);background:rgba(30,6,5,.88)}
@@ -130,7 +130,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 /* EVENT CARDS */
 #cgrid{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:700px){#cgrid{grid-template-columns:1fr 1fr;gap:12px}}
-.ec{border-radius:0;cursor:pointer;overflow:hidden;position:relative;animation:cin .38s ease both;display:flex;flex-direction:column;background:rgba(255,255,255,.06);backdrop-filter:blur(48px) saturate(220%) brightness(1.1);-webkit-backdrop-filter:blur(48px) saturate(220%) brightness(1.1);border:.5px solid rgba(255,255,255,.12);border-top:.5px solid rgba(255,255,255,.22);border-left:3px solid var(--ca,rgba(255,255,255,.2));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.15),inset 1px 0 0 rgba(255,255,255,.06),0 8px 32px rgba(0,0,0,.4);transition:transform .22s ease,box-shadow .22s,border-color .22s}
+.ec{border-radius:0;cursor:pointer;overflow:hidden;position:relative;animation:cin .38s ease both;display:flex;flex-direction:column;background:rgba(18,20,36,.82);border:.5px solid rgba(255,255,255,.12);border-top:.5px solid rgba(255,255,255,.22);border-left:3px solid var(--ca,rgba(255,255,255,.2));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(0,0,0,.15),inset 1px 0 0 rgba(255,255,255,.06),0 8px 32px rgba(0,0,0,.4);transition:transform .22s ease,box-shadow .22s,border-color .22s}
 .ec::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:0;background:var(--ct)}
 .ec:hover{transform:translateY(-2px) scale(1.003);box-shadow:var(--specb),0 14px 48px rgba(0,0,0,.48);border-color:var(--ca)44}
 .ec:active{transform:scale(.986)}
@@ -138,7 +138,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 
 /* Severity band – left edge */
 
-.ec.is-critical .ec-band{animation:bandPulse 2.2s ease-in-out infinite;box-shadow:3px 0 16px var(--sev-color)}
+
 @keyframes bandPulse{0%,100%{opacity:1}50%{opacity:.45}}
 .ec.is-critical{border-color:rgba(255,59,48,.28);box-shadow:var(--spec),0 5px 24px rgba(0,0,0,.32),0 0 0 0 rgba(255,59,48,.08)}
 
@@ -147,7 +147,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 
 /* Icon panel */
 .ec-panel{position:relative;z-index:1;width:62px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:16px 0;border-right:.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03) !important;border-radius:0}
-.ec-panel::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.04),transparent 60%);pointer-events:none}
+
 .ec-icon{width:42px;height:42px;border-radius:0;overflow:hidden;position:relative;border:.5px solid rgba(255,255,255,.12);box-shadow:0 2px 14px rgba(0,0,0,.45),var(--spec)}
 .ec-icon svg{position:absolute;inset:0;width:100%;height:100%}
 .ec-ptype{font-size:7px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;text-align:center;line-height:1.3;max-width:68px;padding:0 4px}
@@ -156,7 +156,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
 .ec-body{position:relative;z-index:1;flex:1;padding:10px 12px 9px;display:flex;flex-direction:column;min-width:0}
 .ec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:5px}
 .ec-name{font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:700;color:#fff;line-height:1.22;letter-spacing:-.45px;flex:1;min-width:0}
-.ec-sev{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:0;font-size:8px;font-weight:800;letter-spacing:.4px;flex-shrink:0;border:.5px solid;backdrop-filter:var(--blur-sm);white-space:nowrap}
+.ec-sev{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:0;font-size:8px;font-weight:800;letter-spacing:.4px;flex-shrink:0;border:.5px solid;white-space:nowrap}
 .ec-sev-dot{width:4px;height:4px;border-radius:50%;animation:sp 1.8s infinite;flex-shrink:0}
 @keyframes sp{0%,100%{opacity:1}50%{opacity:.2}}
 .ec-loc{display:flex;align-items:center;gap:4px;margin-bottom:5px}
@@ -303,7 +303,7 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
       <div id="hero">
         <div class="hero-label">Situação Global</div>
         <div class="hrow">
-          <div class="hs red"><span class="hs-ico">⚠</span><div class="hsn red" id="hs-c">0</div><div class="hsl">Críticos</div></div>
+          <div class="hs red"><span class="hs-ico">⚠</span><div class="hsn red" id="hs-c">0</div><div class="hsl" data-i="criticals">Críticos</div></div>
           <div class="hs"><span class="hs-ico">◎</span><div class="hsn" id="hs-t">0</div><div class="hsl">Ativos</div></div>
           <div class="hs"><span class="hs-ico">⟳</span><div class="hsn mono" id="hs-s">–</div><div class="hsl">Sync</div></div>
           <div class="hs"><span class="hs-ico">⊙</span><div class="hsn mono" id="hs-sr">0</div><div class="hsl">Fontes</div></div>
@@ -316,9 +316,9 @@ body{font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:ant
   <div id="mv">
     <div id="leafmap" style="width:100%;height:100%;z-index:1"></div>
     <div class="mpip" id="mleg" style="z-index:10"><div class="lt3">Legenda</div><div id="legi"></div></div>
-    <div class="mpip" id="mhint" style="z-index:10">Toque nos pontos</div>
+    <div class="mpip" id="mhint" style="z-index:10" data-i="tapPoints">Toque nos pontos</div>
     <button id="srctgl" onclick="tglSrc()" style="z-index:10">⊙ Fontes</button>
-    <div id="srcpanel" style="z-index:20"><div class="spin"><div class="sph"><span>TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
+    <div id="srcpanel" style="z-index:20"><div class="spin"><div class="sph"><span data-i="allSources">TODAS AS FONTES</span><span onclick="tglSrc()" style="cursor:pointer;color:rgba(255,255,255,.4)">✕</span></div><div class="spg" id="srcgrid"></div></div></div>
   </div>
 </div>
 <div id="mnav">
@@ -367,7 +367,8 @@ const T={
   heat:      {l:"Calor Extremo",c:"#FF6B35",g:"rgba(255,107,53,.25)",cg1:"rgba(50,15,0,.55)",ct:"rgba(255,90,20,.05)",ib:"rgba(255,90,20,.2)",ig:"rgba(255,90,20,.18)",bg:{c1:"#0A0200",c2:"#1E0500",p:"#FF5010",m:"heat"},i:iHt},
   cold:      {l:"Frio Extremo",c:"#A8D8EA",g:"rgba(168,216,234,.22)",cg1:"rgba(0,10,28,.55)",ct:"rgba(160,220,240,.04)",ib:"rgba(160,220,240,.16)",ig:"rgba(160,220,240,.14)",bg:{c1:"#00050A",c2:"#000D18",p:"#80C0D8",m:"snow"},i:iCo},
 };
-const SV={critical:{l:"CRÍTICO",c:"#FF453A",b:"rgba(255,69,58,.12)",br:"rgba(255,69,58,.22)"},high:{l:"ALTO",c:"#FF9F0A",b:"rgba(255,159,10,.1)",br:"rgba(255,159,10,.18)"},medium:{l:"MÉDIO",c:"#FFD60A",b:"rgba(255,214,10,.08)",br:"rgba(255,214,10,.14)"},low:{l:"BAIXO",c:"#30D158",b:"rgba(48,209,88,.07)",br:"rgba(48,209,88,.14)"}};
+const SV_BASE={critical:{c:"#FF453A",b:"rgba(255,69,58,.12)",br:"rgba(255,69,58,.22)"},high:{c:"#FF9F0A",b:"rgba(255,159,10,.1)",br:"rgba(255,159,10,.18)"},medium:{c:"#FFD60A",b:"rgba(255,214,10,.08)",br:"rgba(255,214,10,.14)"},low:{c:"#30D158",b:"rgba(48,209,88,.07)",br:"rgba(48,209,88,.14)"}};
+const SV=new Proxy(SV_BASE,{get:(t,k)=>{const s=t[k];return s?{...s,l:t$&&t$(k)||k.toUpperCase()}:undefined;}});
 const BGA={c1:"#030308",c2:"#07070F",p:"#3040A8",m:"stars"};
 
 // ─── PROXIMITY TIPS ────────────────────────────────────────────
@@ -980,7 +981,71 @@ const STATIC_EVENTS=[
 function merge(...arrays){const all=arrays.flat(),seen=new Set();return all.filter(ev=>{if(!ev?.id)return false;const k=`${Math.round((ev.lat||0)*2)/2}_${Math.round((ev.lng||0)*2)/2}_${ev.type}`;if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>{const o={critical:0,high:1,medium:2,low:3};return(o[a.severity]||2)-(o[b.severity]||2);});}
 
 // ─── MAIN LOAD ─────────────────────────────────────────────────
-async function loadAll(force=false){
+async 
+// ─── EXTRA DATA SOURCES ──────────────────────────────────────
+async function fGDACS(){
+  // GDACS public API — global disaster alerts
+  try{
+    const d=await fetch('https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?fromdate=2026-02-10&todate=2026-03-12&alertlevel=Green;Orange;Red&eventlist=EQ;TC;FL;VO;DR;WF&limit=50').then(r=>r.json());
+    if(!d||!d.features) return[];
+    return d.features.map(f=>{
+      const p=f.properties||{};
+      const typeMap={EQ:'earthquake',TC:'hurricane',FL:'flood',VO:'volcano',DR:'flood',WF:'heat'};
+      return{
+        id:'gdacs_'+p.eventid,
+        type:typeMap[p.eventtype]||'earthquake',
+        name:p.name||p.eventtype,
+        location:p.country||'',
+        lat:f.geometry?.coordinates?.[1]||0,
+        lng:f.geometry?.coordinates?.[0]||0,
+        severity:p.alertlevel==='Red'?'critical':p.alertlevel==='Orange'?'high':'medium',
+        source:'GDACS',
+        time:p.fromdate?.slice(0,10)||'',
+        description:`${p.name} — alerta ${p.alertlevel}. Afetados: ${p.affectedcountries?.map(x=>x.countryname).join(', ')||'—'}`,
+        sourceUrl:`https://www.gdacs.org/report.aspx?eventtype=${p.eventtype}&eventid=${p.eventid}`,
+      };
+    }).filter(e=>e.lat!==0);
+  }catch{return[];}
+}
+
+async function fAVON(){
+  // Alaska Volcano Observatory - recent activity
+  try{
+    const d=await fetch('https://www.avo.alaska.edu/feeds/recent_color.php').then(r=>r.text());
+    const lines=d.trim().split('\n').slice(1);
+    return lines.slice(0,15).map(l=>{
+      const p=l.split(',');
+      return{
+        id:'avo_'+p[0],type:'volcano',name:p[1]||'Alaska Volcano',
+        location:'Alaska, USA',lat:parseFloat(p[3])||0,lng:parseFloat(p[4])||0,
+        severity:p[2]==='RED'?'critical':p[2]==='ORANGE'?'high':p[2]==='YELLOW'?'medium':'low',
+        source:'AVO',time:p[5]?.slice(0,10)||'',
+        description:`Nível de alerta: ${p[2]}. ${p[1]}`,
+        sourceUrl:'https://www.avo.alaska.edu/',
+      };
+    }).filter(e=>e.lat!==0);
+  }catch{return[];}
+}
+
+async function fPDC(){
+  // PDC Global hazards feed
+  try{
+    const d=await fetch('https://sentry.pdc.org/hp_srv/services/hazards/t/json/get_active_hazards').then(r=>r.json());
+    if(!d||!Array.isArray(d)) return[];
+    const tm={EARTHQUAKE:'earthquake',VOLCANO:'volcano','TROPICAL CYCLONE':'hurricane',FLOOD:'flood','WILD FIRE':'heat',TSUNAMI:'tsunami','WINTER STORM':'cold','EXTREME HEAT':'heat'};
+    return d.slice(0,30).map(h=>({
+      id:'pdc_'+h.hazard_ID,
+      type:tm[h.type_name]||'earthquake',
+      name:h.hazard_Name,location:h.country_name||h.region||'',
+      lat:parseFloat(h.latitude)||0,lng:parseFloat(h.longitude)||0,
+      severity:h.severity_ID>=4?'critical':h.severity_ID>=3?'high':h.severity_ID>=2?'medium':'low',
+      source:'PDC Global',time:h.start_Date?.slice(0,10)||'',
+      description:h.description||h.hazard_Name,
+      sourceUrl:'https://www.pdc.org/apps/haz_tool/hazards/',
+    })).filter(e=>e.lat!==0);
+  }catch{return[];}
+}
+function loadAll(force=false){
   if(isLoading&&!force)return;
   isLoading=true;
   initPipe();
@@ -997,10 +1062,10 @@ async function loadAll(force=false){
   events=merge(u.value||[],em.value||[],ir.value||[],gn.value||[],STATIC_EVENTS);
   renderAll();setPP('seismic','ok');
 
-  // Phase 2: NASA + NOAA
+  // Phase 2: NASA + NOAA + extra sources
   setPP('nasa','l');setPP('noaa','l');
-  const [eo,nw,rw,fi]=await Promise.allSettled([fEONET(),fNOAA(),fRelief(),fFIRMS()]);
-  events=merge(events,eo.value||[],nw.value||[],rw.value||[],fi.value||[],STATIC_EVENTS);
+  const [eo,nw,rw,fi,gd,pd,av]=await Promise.allSettled([fEONET(),fNOAA(),fRelief(),fFIRMS(),fGDACS(),fPDC(),fAVON()]);
+  events=merge(events,eo.value||[],nw.value||[],rw.value||[],fi.value||[],gd.value||[],pd.value||[],av.value||[],STATIC_EVENTS);
   renderAll();setPP('nasa','ok');setPP('noaa','ok');
 
   // Phase 3: Open-Meteo
@@ -1028,7 +1093,54 @@ async function loadAll(force=false){
   renderAll();chkProx();
   setTimeout(()=>document.getElementById('pbar').classList.remove('open'),5000);
 }
-setInterval(()=>loadAll(),600000);
+
+// ─── AUTO-REFRESH + RETRY ────────────────────────────────────
+let _refreshTimer=null, _retryCount=0;
+const REFRESH_MS=600000, RETRY_MS=[15000,30000,60000,120000];
+
+function scheduleRefresh(delay=REFRESH_MS){
+  clearTimeout(_refreshTimer);
+  _refreshTimer=setTimeout(async()=>{
+    try{
+      await loadAll(true);
+      _retryCount=0;
+      scheduleRefresh(REFRESH_MS);
+    }catch(e){
+      const backoff=RETRY_MS[Math.min(_retryCount,RETRY_MS.length-1)];
+      _retryCount++;
+      console.warn(`TerraWatch: refresh failed, retry in ${backoff/1000}s`,e);
+      scheduleRefresh(backoff);
+    }
+  }, delay);
+}
+
+// Background fetch worker using MessageChannel to avoid blocking main thread
+function bgFetch(url){
+  return new Promise((resolve,reject)=>{
+    const ch=new MessageChannel();
+    ch.port1.onmessage=e=>e.data.ok?resolve(e.data.data):reject(new Error(e.data.error));
+    // If worker exists use it, else fallback
+    if(window._bgWorker){
+      window._bgWorker.postMessage({url},[ ch.port2]);
+    } else {
+      fetch(url).then(r=>r.json()).then(d=>resolve(d)).catch(reject);
+    }
+  });
+}
+
+// Init background Worker for non-blocking fetches
+try{
+  const blob=new Blob([`
+    self.onmessage=async function(e){
+      try{const r=await fetch(e.data.url);const d=await r.json();e.ports[0].postMessage({ok:true,data:d});}
+      catch(err){e.ports[0].postMessage({ok:false,error:err.message});}
+    };
+  `],{type:'text/javascript'});
+  window._bgWorker=new Worker(URL.createObjectURL(blob));
+}catch(e){window._bgWorker=null;}
+
+scheduleRefresh(REFRESH_MS);
+
 function showCC(){document.getElementById('lw').style.display='none';document.getElementById('cc').style.display='block';}
 
 // ─── RENDER ────────────────────────────────────────────────────
@@ -1043,107 +1155,65 @@ function renderAll(){
 
 function renderCards(){
   const fl=curFilter==='all'?events:events.filter(e=>e.type===curFilter);
-  document.getElementById('shlbl').textContent=curFilter==='all'?`TODOS OS ALERTAS — ${fl.length}`:`${(T[curFilter]?.l||'').toUpperCase()} — ${fl.length}`;
-  const grid=document.getElementById('cgrid');grid.innerHTML='';
-  if(!fl.length){grid.innerHTML='<div style="text-align:center;padding:50px;color:rgba(255,255,255,.16);font-size:13px">Nenhum alerta ativo</div>';return;}
+  document.getElementById('shlbl').textContent=
+    curFilter==='all'?`TODOS OS ALERTAS — ${fl.length}`:`${(T[curFilter]?.l||'').toUpperCase()} — ${fl.length}`;
+  const grid=document.getElementById('cgrid');
+
+  // ── Virtual list: render placeholders, reveal on scroll ──
+  grid.innerHTML='';
+  if(!fl.length){
+    grid.innerHTML=`<div style="text-align:center;padding:50px;color:rgba(255,255,255,.16);font-size:12px">${t$('noEvents')}</div>`;
+    return;
+  }
+
+  // Build all cards but hidden; IO reveals them with fade
+  const frag=document.createDocumentFragment();
+  if(window._cardIO) window._cardIO.disconnect();
+  window._cardIO=new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.style.opacity='1';
+        entry.target.style.transform='none';
+        window._cardIO.unobserve(entry.target);
+      }
+    });
+  },{root:document.getElementById('cv'),rootMargin:'80px',threshold:0.01});
+
   fl.forEach((ev,i)=>{
-    const cfg=T[ev.type]||T.earthquake,sev=SV[ev.severity]||SV.medium;
+    const cfg=T[ev.type]||T.earthquake,sev=SV[ev.severity]||SV_BASE.medium;
+    const sevLabel=sev.l||(SV_BASE[ev.severity]&&t$(ev.severity))||ev.severity.toUpperCase();
     const dist=uGeo&&ev.lat?Math.round(hvs(uGeo.lat,uGeo.lng,ev.lat,ev.lng)):null,near=dist&&dist<1200;
     const isCrit=ev.severity==='critical';
     const card=document.createElement('div');
     card.className='ec'+(isCrit?' is-critical':'');
-    card.style.cssText=`--ct:${cfg.ct};--ca:${cfg.c};--ib:${cfg.ib};--ig:${cfg.g};--sev-color:${sev.c};animation-delay:${Math.min(i*35,600)}ms`;
-    const lnk=ev.sourceUrl?`<a class="clnk" href="${ev.sourceUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H4M10 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Fonte</a>`:'';    card.innerHTML=`
+    // Virtual fade-in: start hidden, IO will reveal
+    card.style.cssText=`--ct:${cfg.ct};--ca:${cfg.c};--ib:${cfg.ib};--ig:${cfg.g};--sev-color:${sev.c};border-left-color:${cfg.c};opacity:0;transform:translateY(12px);transition:opacity .32s ease ${Math.min(i%8*40,280)}ms,transform .32s ease ${Math.min(i%8*40,280)}ms`;
+    const lnk=ev.sourceUrl?`<a class="clnk" href="${ev.sourceUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 10L10 2M10 2H4M10 2V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>${t$('source')}</a>`:'';
+    const proxBadge=near?`<div class="nbg" style="background:rgba(48,209,88,.1);border-color:rgba(48,209,88,.25);color:#30D158">📍 ${dist}${t$('km')}</div>`:'';
+    card.innerHTML=`
       <div style="display:flex;flex:1">
-        <div class="ec-panel" style="background:linear-gradient(160deg,${cfg.cg1||'rgba(12,13,22,.9)'} 0%,rgba(0,0,0,.5) 100%)">
-          <div class="ec-icon" style="background:${cfg.ib};box-shadow:0 2px 14px ${cfg.g}">${cfg.i()}</div>
-          <div class="ec-ptype" style="color:${cfg.c}">${cfg.l}${ev.mag?`<br><span style="font-size:11px;font-weight:900;letter-spacing:-.2px">M${ev.mag}</span>`:''}</div>
+        <div class="ec-panel">
+          <div class="ec-icon">${(cfg.i||iEq)()}</div>
+          <div class="ec-ptype" style="color:${cfg.c}">${cfg.l}</div>
         </div>
         <div class="ec-body">
           <div class="ec-top">
             <div class="ec-name">${ev.name}</div>
-            <div class="ec-sev" style="background:${sev.b};color:${sev.c};border-color:${sev.br}"><div class="ec-sev-dot" style="background:${sev.c}"></div>${sev.l}</div>
+            <div class="ec-sev" style="background:${sev.b};color:${sev.c};border-color:${sev.br}"><div class="ec-sev-dot" style="background:${sev.c}"></div>${sevLabel}</div>
           </div>
           <div class="ec-loc"><span class="ec-loc-pin">📍</span><span class="ec-loc-txt">${ev.location}</span></div>
           <div class="ec-desc">${ev.description}</div>
           <div class="ec-foot">
-            <span class="ec-src">${ev.source}</span>
-            <div class="ec-fr">${near?`<span class="nbg"><span class="nbd"></span>${dist}km</span>`:''}<span class="ec-tm">${ev.time}</span>${lnk}</div>
+            <div class="ec-src">${ev.source||''}</div>
+            <div class="ec-fr">${proxBadge}${lnk}<div class="ec-tm">${ev.time||''}</div></div>
           </div>
         </div>
       </div>`;
-    card.onclick=()=>openModal(ev);grid.appendChild(card);
+    card.onclick=()=>showModal(ev);
+    frag.appendChild(card);
+    window._cardIO.observe(card);
   });
-}
-
-// ─── MAP ───────────────────────────────────────────────────────
-const NS='http://www.w3.org/2000/svg';
-
-function renderMap(){
-  const fl = curFilter==='all' ? events : events.filter(e=>e.type===curFilter);
-
-  // Init Leaflet once
-  if(!window._leafMap){
-    window._leafMap = L.map('leafmap', {
-      zoomControl: false,
-      attributionControl: false,
-      minZoom: 2, maxZoom: 8,
-    }).setView([20, 10], 2);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      subdomains: 'abc',
-    }).addTo(window._leafMap);
-
-    window._leafMarkers = [];
-  }
-
-  // Clear old markers
-  window._leafMarkers.forEach(m => window._leafMap.removeLayer(m));
-  window._leafMarkers = [];
-
-  // Add event markers
-  const sevOrder = {critical:0,high:1,medium:2,low:3};
-  const sorted = [...fl].sort((a,b)=>(sevOrder[a.severity]||3)-(sevOrder[b.severity]||3));
-
-  sorted.forEach(ev => {
-    const sev = ev.severity||'low';
-    const tc = T[ev.type];
-    const col = tc ? tc.c : '#5080FF';
-    const r   = sev==='critical'?14 : sev==='high'?11 : sev==='medium'?9 : 7;
-    const pulse = sev==='critical'||sev==='high';
-
-    const icon = L.divIcon({
-      className:'',
-      html: `<div style="
-        width:${r*2}px;height:${r*2}px;
-        background:${col}33;
-        border:2px solid ${col};
-        border-radius:50%;
-        box-shadow:0 0 ${pulse?12:6}px ${col}88;
-        ${pulse?`animation:mPulse 2s ease-in-out infinite`:''}
-      "></div>`,
-      iconSize:[r*2,r*2],
-      iconAnchor:[r,r],
-    });
-
-    const marker = L.marker([ev.lat, ev.lng], {icon})
-      .addTo(window._leafMap)
-      .on('click', () => showModal(ev));
-
-    window._leafMarkers.push(marker);
-  });
-
-  // Legend
-  const legi = document.getElementById('legi');
-  const types = [...new Set(fl.map(e=>e.type))];
-  legi.innerHTML = types.map(t => {
-    const tc = T[t]; if(!tc) return '';
-    return `<div class="lr3 on" onclick="setF('${t}')">
-      <div class="lrd" style="background:${tc.c}"></div>
-      <div class="lrl">${tc.l}</div>
-    </div>`;
-  }).join('');
+  grid.appendChild(frag);
 }
 function setF(f){curFilter=f;document.querySelectorAll('.fc').forEach(c=>c.classList.toggle('on',c.dataset.t===f));setTheme(f);if(curView==='cards')renderCards();else renderMap();}
 function swV(v){curView=v;document.getElementById('cv').style.display=v==='cards'?'block':'none';document.getElementById('mv').style.display=v==='map'?'block':'none';document.getElementById('vs-c').classList.toggle('on',v==='cards');document.getElementById('vs-m').classList.toggle('on',v==='map');document.getElementById('mn-c').classList.toggle('on',v==='cards');document.getElementById('mn-m').classList.toggle('on',v==='map');if(v==='map')renderMap();else renderCards();}
@@ -1167,7 +1237,7 @@ function closeModal(){document.getElementById('mbg').classList.remove('o');}
 function mbc(e){if(e.target===document.getElementById('mbg'))closeModal();}
 
 // ─── INIT ──────────────────────────────────────────────────────
-setTheme('all');reqGeo();loadAll();
+setTheme('all');applyI18n();reqGeo();loadAll();
 </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
