@@ -1,0 +1,30 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#100820"/><stop offset="100%" stop-color="#060310"/></linearGradient>
+<linearGradient id="scloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3A2060"/><stop offset="100%" stop-color="#1E1040"/></linearGradient>
+<filter id="sglow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="slglow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#sbg)"/>
+<!-- storm cloud — fuller shape -->
+<path d="M8 28 Q7 22 12 20 Q12 14 18 13 Q21 9 26 11 Q31 9 34 13 Q39 13 40 18 Q44 18 44 23 Q44 28 40 28 Z" fill="url(#scloud)" stroke="#5030A0" stroke-width=".8"/>
+<!-- cloud highlight top -->
+<path d="M13 20 Q18 16 24 15 Q30 14 35 17" stroke="#6040C0" stroke-width=".8" fill="none" opacity=".5"/>
+<!-- rain drops -->
+<g opacity=".6" stroke="#5080FF" stroke-width="1.2" stroke-linecap="round">
+  <line x1="14" y1="31" x2="12" y2="38"><animate attributeName="opacity" values="1;0;1" dur=".8s" repeatCount="indefinite"/><animate attributeName="y1" values="31;36" dur=".8s" repeatCount="indefinite"/><animate attributeName="y2" values="38;44" dur=".8s" repeatCount="indefinite"/></line>
+  <line x1="20" y1="31" x2="18" y2="37"><animate attributeName="opacity" values="1;0;1" dur=".8s" begin=".2s" repeatCount="indefinite"/><animate attributeName="y1" values="31;36" dur=".8s" begin=".2s" repeatCount="indefinite"/><animate attributeName="y2" values="37;43" dur=".8s" begin=".2s" repeatCount="indefinite"/></line>
+  <line x1="30" y1="31" x2="28" y2="38"><animate attributeName="opacity" values="1;0;1" dur=".8s" begin=".35s" repeatCount="indefinite"/><animate attributeName="y1" values="31;36" dur=".8s" begin=".35s" repeatCount="indefinite"/><animate attributeName="y2" values="38;44" dur=".8s" begin=".35s" repeatCount="indefinite"/></line>
+  <line x1="36" y1="31" x2="34" y2="38"><animate attributeName="opacity" values="1;0;1" dur=".8s" begin=".5s" repeatCount="indefinite"/><animate attributeName="y1" values="31;36" dur=".8s" begin=".5s" repeatCount="indefinite"/><animate attributeName="y2" values="38;44" dur=".8s" begin=".5s" repeatCount="indefinite"/></line>
+</g>
+<!-- lightning bolt — bright flash -->
+<path d="M27 13 L21 24 L25 24 L18 38 L30 22 L25.5 22 Z" fill="#FFE000" filter="url(#slglow)">
+  <animate attributeName="opacity" values="0;0;0;1;1;0;0;0;0;1;0" dur="3s" repeatCount="indefinite"/>
+</path>
+<path d="M27 13 L21 24 L25 24 L18 38 L30 22 L25.5 22 Z" fill="white" opacity=".5">
+  <animate attributeName="opacity" values="0;0;0;.6;0;0;0;0;.4;0;0" dur="3s" repeatCount="indefinite"/>
+</path>
+<!-- flash fill whole area -->
+<rect width="48" height="48" fill="#8C64FF" opacity="0" rx="4">
+  <animate attributeName="opacity" values="0;0;0;.04;0;0;0;0;.03;0;0" dur="3s" repeatCount="indefinite"/>
+</rect>
+</svg>

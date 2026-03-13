@@ -1,0 +1,50 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="vbg" cx="50%" cy="100%" r="80%"><stop offset="0%" stop-color="#FF4500" stop-opacity=".5"/><stop offset="100%" stop-color="#1A0400" stop-opacity="0"/></radialGradient>
+<radialGradient id="vlava" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFDD00"/><stop offset="40%" stop-color="#FF6600"/><stop offset="100%" stop-color="#CC2200"/></radialGradient>
+<filter id="vglow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#vbg)"/>
+<!-- mountain body -->
+<path d="M24 7 L40 38 Q37 40 24 40 Q11 40 8 38 Z" fill="#2A0E00"/>
+<path d="M24 7 L40 38 Q37 40 24 40 Q11 40 8 38 Z" stroke="#FF4500" stroke-width=".8" stroke-linejoin="round" fill="none" opacity=".6"/>
+<!-- lava flows down flanks -->
+<path d="M24 12 Q26 20 30 28 Q33 33 35 38" stroke="#FF5500" stroke-width="1.5" stroke-linecap="round" opacity=".7">
+  <animate attributeName="opacity" values=".4;.8;.4" dur="3s" repeatCount="indefinite"/>
+</path>
+<path d="M24 12 Q22 21 19 28 Q16 33 14 38" stroke="#FF6600" stroke-width="1.2" stroke-linecap="round" opacity=".5">
+  <animate attributeName="opacity" values=".3;.6;.3" dur="2.5s" begin=".8s" repeatCount="indefinite"/>
+</path>
+<!-- crater glow -->
+<ellipse cx="24" cy="9" rx="5" ry="3" fill="url(#vlava)" filter="url(#vglow)">
+  <animate attributeName="ry" values="2.5;4;2.5" dur="2s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values=".8;1;.8" dur="2s" repeatCount="indefinite"/>
+</ellipse>
+<!-- embers -->
+<circle cx="23" cy="11" r="1.2" fill="#FFCC00" filter="url(#vglow)">
+  <animate attributeName="cy" values="11;-1" dur="1.3s" repeatCount="indefinite"/>
+  <animate attributeName="cx" values="23;21" dur="1.3s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;0" dur="1.3s" repeatCount="indefinite"/>
+  <animate attributeName="r" values="1.2;0.3" dur="1.3s" repeatCount="indefinite"/>
+</circle>
+<circle cx="25" cy="8" r="1.5" fill="#FF8800" filter="url(#vglow)">
+  <animate attributeName="cy" values="8;-3" dur="1.8s" begin=".4s" repeatCount="indefinite"/>
+  <animate attributeName="cx" values="25;28" dur="1.8s" begin=".4s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;0" dur="1.8s" begin=".4s" repeatCount="indefinite"/>
+</circle>
+<circle cx="22" cy="10" r=".8" fill="#FFEE44" filter="url(#vglow)">
+  <animate attributeName="cy" values="10;0" dur="1s" begin=".9s" repeatCount="indefinite"/>
+  <animate attributeName="cx" values="22;19" dur="1s" begin=".9s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;0" dur="1s" begin=".9s" repeatCount="indefinite"/>
+</circle>
+<!-- smoke -->
+<circle cx="24" cy="6" r="3" fill="#555" opacity=".0">
+  <animate attributeName="cy" values="6;-4" dur="2.5s" repeatCount="indefinite"/>
+  <animate attributeName="r" values="2;6" dur="2.5s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values=".25;0" dur="2.5s" repeatCount="indefinite"/>
+</circle>
+<circle cx="26" cy="5" r="2.5" fill="#444" opacity="0">
+  <animate attributeName="cy" values="5;-6" dur="3s" begin="1s" repeatCount="indefinite"/>
+  <animate attributeName="r" values="1.5;5" dur="3s" begin="1s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values=".2;0" dur="3s" begin="1s" repeatCount="indefinite"/>
+</circle>
+</svg>

@@ -1,0 +1,35 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="htbg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FF5500" stop-opacity=".5"/><stop offset="60%" stop-color="#CC2200" stop-opacity=".2"/><stop offset="100%" stop-color="#1A0400" stop-opacity="0"/></radialGradient>
+<radialGradient id="htsun" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="30%" stop-color="#FFE060"/><stop offset="70%" stop-color="#FF8800"/><stop offset="100%" stop-color="#FF4400" stop-opacity=".8"/></radialGradient>
+<filter id="htglow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="htsm"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#htbg)"/>
+<!-- outer glow halo -->
+<circle cx="24" cy="22" r="16" fill="#FF6600" opacity=".12" filter="url(#htglow)">
+  <animate attributeName="r" values="14;18;14" dur="2.5s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values=".1;.18;.1" dur="2.5s" repeatCount="indefinite"/>
+</circle>
+<!-- sun rays — 8 directions -->
+<g stroke="#FF8800" stroke-linecap="round" filter="url(#htsm)">
+  <line x1="24" y1="4" x2="24" y2="9" stroke-width="2"><animate attributeName="opacity" values=".6;1;.6" dur="1.5s" repeatCount="indefinite"/></line>
+  <line x1="37" y1="7" x2="34" y2="11" stroke-width="1.8" transform-origin="24 22"><animate attributeName="opacity" values=".5;1;.5" dur="1.5s" begin=".19s" repeatCount="indefinite"/></line>
+  <line x1="43" y1="20" x2="38" y2="21" stroke-width="2"><animate attributeName="opacity" values=".6;1;.6" dur="1.5s" begin=".38s" repeatCount="indefinite"/></line>
+  <line x1="39" y1="34" x2="35" y2="31" stroke-width="1.8"><animate attributeName="opacity" values=".5;1;.5" dur="1.5s" begin=".56s" repeatCount="indefinite"/></line>
+  <line x1="11" y1="7" x2="14" y2="11" stroke-width="1.8"><animate attributeName="opacity" values=".5;1;.5" dur="1.5s" begin=".75s" repeatCount="indefinite"/></line>
+  <line x1="5" y1="20" x2="10" y2="21" stroke-width="2"><animate attributeName="opacity" values=".6;1;.6" dur="1.5s" begin=".94s" repeatCount="indefinite"/></line>
+  <line x1="9" y1="34" x2="13" y2="31" stroke-width="1.8"><animate attributeName="opacity" values=".5;1;.5" dur="1.5s" begin="1.1s" repeatCount="indefinite"/></line>
+</g>
+<!-- sun disc -->
+<circle cx="24" cy="22" r="10" fill="url(#htsun)" filter="url(#htglow)">
+  <animate attributeName="r" values="9;11;9" dur="2s" repeatCount="indefinite"/>
+</circle>
+<!-- heat shimmer lines at bottom -->
+<path d="M8 38 Q12 36 16 38 Q20 40 24 38 Q28 36 32 38 Q36 40 40 38" stroke="#FF6600" stroke-width="1" fill="none" opacity=".5">
+  <animate attributeName="d" values="M8 38 Q12 36 16 38 Q20 40 24 38 Q28 36 32 38 Q36 40 40 38;M8 38 Q12 40 16 38 Q20 36 24 38 Q28 40 32 38 Q36 36 40 38;M8 38 Q12 36 16 38 Q20 40 24 38 Q28 36 32 38 Q36 40 40 38" dur="1s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values=".3;.6;.3" dur="1s" repeatCount="indefinite"/>
+</path>
+<path d="M10 43 Q14 41 18 43 Q22 45 26 43 Q30 41 34 43 Q38 45 42 43" stroke="#FF4400" stroke-width=".8" fill="none" opacity=".35">
+  <animate attributeName="d" values="M10 43 Q14 41 18 43 Q22 45 26 43 Q30 41 34 43 Q38 45 42 43;M10 43 Q14 45 18 43 Q22 41 26 43 Q30 45 34 43 Q38 41 42 43;M10 43 Q14 41 18 43 Q22 45 26 43 Q30 41 34 43 Q38 45 42 43" dur="1.2s" begin=".3s" repeatCount="indefinite"/>
+</path>
+</svg>

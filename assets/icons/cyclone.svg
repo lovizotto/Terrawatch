@@ -1,0 +1,23 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="cybg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#006655" stop-opacity=".45"/><stop offset="100%" stop-color="#001810" stop-opacity="0"/></radialGradient>
+<filter id="cyglow"><feGaussianBlur stdDeviation="1.3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#cybg)"/>
+<!-- rotating spiral arms -->
+<g filter="url(#cyglow)">
+  <path d="M24 24 Q34 18 38 24 Q40 30 34 34 Q24 40 16 34 Q8 26 14 18 Q20 10 28 12 Q34 14 34 20" stroke="#00D2A0" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="-360 24 24" dur="6s" repeatCount="indefinite"/>
+  </path>
+  <path d="M24 24 Q30 20 34 24 Q36 30 30 34 Q22 38 16 32 Q10 24 16 18 Q22 12 26 16" stroke="#50F0C0" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".65">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="-360 24 24" dur="6s" repeatCount="indefinite"/>
+  </path>
+</g>
+<!-- wave rings -->
+<circle cx="24" cy="24" r="18" stroke="#00D2A0" stroke-width=".8" fill="none" opacity=".18" stroke-dasharray="2 3">
+  <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="15s" repeatCount="indefinite"/>
+</circle>
+<!-- eye -->
+<circle cx="24" cy="24" r="5" fill="none" stroke="#00D2A0" stroke-width="1.5" opacity=".7"/>
+<circle cx="24" cy="24" r="2.5" fill="#80F0D0" opacity=".8"/>
+<circle cx="24" cy="24" r="1" fill="#CCFFF0"/>
+</svg>

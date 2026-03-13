@@ -1,0 +1,28 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<linearGradient id="fwg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2288FF" stop-opacity=".75"/><stop offset="100%" stop-color="#0030BB" stop-opacity=".95"/></linearGradient>
+<linearGradient id="fwg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#44AAFF" stop-opacity=".5"/><stop offset="100%" stop-color="#0044CC" stop-opacity=".8"/></linearGradient>
+<radialGradient id="fbg" cx="50%" cy="80%" r="70%"><stop offset="0%" stop-color="#0040BB" stop-opacity=".35"/><stop offset="100%" stop-color="#000511" stop-opacity="0"/></radialGradient>
+<filter id="fglow"><feGaussianBlur stdDeviation="1" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#fbg)"/>
+<!-- submerged building -->
+<rect x="17" y="16" width="14" height="16" fill="#0A1A30" stroke="#1A4080" stroke-width=".8" opacity=".8"/>
+<!-- windows -->
+<rect x="19" y="18" width="4" height="3" fill="#2266AA" opacity=".6"/>
+<rect x="25" y="18" width="4" height="3" fill="#2266AA" opacity=".6"/>
+<rect x="19" y="23" width="4" height="3" fill="#1144AA" opacity=".4"/>
+<!-- roof -->
+<path d="M14 16 L24 9 L34 16 Z" fill="#0D1E38" stroke="#1A4080" stroke-width=".8"/>
+<!-- water wave 1 — main -->
+<path d="M2 30 Q8 26 14 30 Q20 34 26 30 Q32 26 38 30 Q42 32 46 30 L46 48 L2 48 Z" fill="url(#fwg)">
+  <animate attributeName="d" values="M2 30 Q8 26 14 30 Q20 34 26 30 Q32 26 38 30 Q42 32 46 30 L46 48 L2 48 Z;M2 30 Q8 34 14 30 Q20 26 26 30 Q32 34 38 30 Q42 28 46 30 L46 48 L2 48 Z;M2 30 Q8 26 14 30 Q20 34 26 30 Q32 26 38 30 Q42 32 46 30 L46 48 L2 48 Z" dur="2.2s" repeatCount="indefinite"/>
+</path>
+<!-- water wave 2 — top crest -->
+<path d="M2 27 Q8 23 14 27 Q20 31 26 27 Q32 23 38 27 Q42 29 46 27" stroke="#66BBFF" stroke-width="1.2" fill="none" filter="url(#fglow)" opacity=".7">
+  <animate attributeName="d" values="M2 27 Q8 23 14 27 Q20 31 26 27 Q32 23 38 27 Q42 29 46 27;M2 27 Q8 31 14 27 Q20 23 26 27 Q32 31 38 27 Q42 25 46 27;M2 27 Q8 23 14 27 Q20 31 26 27 Q32 23 38 27 Q42 29 46 27" dur="2.2s" repeatCount="indefinite"/>
+</path>
+<!-- foam spots on wave -->
+<circle cx="12" cy="27" r="1.5" fill="white" opacity=".4"><animate attributeName="opacity" values=".3;.5;.3" dur="1.5s" repeatCount="indefinite"/></circle>
+<circle cx="26" cy="27" r="1.2" fill="white" opacity=".35"><animate attributeName="opacity" values=".25;.5;.25" dur="1.8s" begin=".5s" repeatCount="indefinite"/></circle>
+<circle cx="40" cy="27" r="1.4" fill="white" opacity=".3"><animate attributeName="opacity" values=".2;.45;.2" dur="1.3s" begin=".9s" repeatCount="indefinite"/></circle>
+</svg>

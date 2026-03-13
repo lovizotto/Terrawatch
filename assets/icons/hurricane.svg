@@ -1,0 +1,27 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="hbg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#004488" stop-opacity=".5"/><stop offset="70%" stop-color="#0060CC" stop-opacity=".2"/><stop offset="100%" stop-color="#001133" stop-opacity="0"/></radialGradient>
+<radialGradient id="heye" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#88CCFF" stop-opacity=".6"/><stop offset="100%" stop-color="#0080FF" stop-opacity="0"/></radialGradient>
+<filter id="hglow"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="48" height="48" fill="url(#hbg)"/>
+<!-- spiral bands — 4 arms rotating -->
+<g filter="url(#hglow)">
+  <path d="M24 24 Q32 16 38 20 Q42 26 36 32 Q28 38 20 34 Q12 28 14 20 Q18 12 26 12 Q32 12 34 18" stroke="#00A0FF" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".9">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M24 24 Q30 18 36 22 Q40 28 34 34 Q26 40 18 36 Q10 30 12 22 Q16 14 24 14" stroke="#4AC4FF" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".65">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M24 24 Q28 20 32 24 Q34 28 30 32 Q24 36 18 32 Q14 26 18 22 Q22 18 24 20" stroke="#80D8FF" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".5">
+    <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="360 24 24" dur="5s" repeatCount="indefinite"/>
+  </path>
+</g>
+<!-- outer rain bands -->
+<circle cx="24" cy="24" r="19" stroke="#00608A" stroke-width="1" fill="none" opacity=".25" stroke-dasharray="3 4">
+  <animateTransform attributeName="transform" type="rotate" from="0 24 24" to="-360 24 24" dur="12s" repeatCount="indefinite"/>
+</circle>
+<!-- eye -->
+<circle cx="24" cy="24" r="5" fill="url(#heye)"/>
+<circle cx="24" cy="24" r="3" fill="none" stroke="#88DDFF" stroke-width="1.2"/>
+<circle cx="24" cy="24" r="1.5" fill="#CCF0FF" opacity=".9"/>
+</svg>

@@ -1,30 +1,92 @@
-# 🌍 TerraWatch
+# TerraWatch — Rust/WASM
 
-**Monitor de desastres naturais em tempo real** — terremotos, vulcões, furacões, ciclones, tempestades, enchentes e tsunamis.
+> Natural disaster monitor. Core logic in **Rust compiled to WebAssembly**; only
+> the Leaflet map bridge and the data-pipeline Worker remain in JS.
 
-🔗 **Acesse:** https://lovizotto.github.io/terrawatch
+## Architecture
 
-## ✨ Funcionalidades
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser                                                     │
+│                                                             │
+│  index.html                                                 │
+│    └─ src/main.js (6 lines)  ── await init(wasm)            │
+│                                      │                      │
+│         ┌────────────────────────────┘                      │
+│         │  tw_wasm.wasm  (Rust → WASM)                      │
+│         │    lib.rs → app.rs          event wiring          │
+│         │    state.rs                 AppState (thread_local)│
+│         │    render.rs                DOM mutations          │
+│         │    pipeline.rs              Worker lifecycle       │
+│         │    geo.rs                   haversine + geoloc     │
+│         │    config.rs                colours/labels (static)│
+│         │    icons.rs                 SVG (include_str!)     │
+│         │    dom.rs                   web-sys helpers        │
+│         │    leaflet.rs               extern JS imports      │
+│         │    types.rs                 Event, Filter, View    │
+│         │                                                    │
+│         └─→ src/leaflet_bridge.js    Leaflet map API        │
+│                                                             │
+│  public/worker.js (JS, I/O bound)   50+ data sources        │
+│  public/sw.js                        service worker         │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- 🌋 Fundo atmosférico animado por tipo de desastre (canvas 60fps)
-- 💎 Glassmorphism real com backdrop-filter
-- 🎨 Ícones SVG animados exclusivos por categoria
-- 🗺️ Mapa-múndi com pontos pulsantes ao vivo
-- 🤖 Dados buscados via Claude AI + web search
-- 📲 **PWA instalável** — funciona como app nativo no celular e desktop
+## Prerequisites
 
-## 📲 Instalar como App
+```bash
+# 1. Rust (stable)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-**Android/Chrome:** Abra o site → menu (⋮) → "Adicionar à tela inicial"  
-**iOS/Safari:** Compartilhar → "Adicionar à tela de início"  
-**Desktop Chrome/Edge:** Clique no ícone de instalação na barra de endereço
+# 2. WASM target
+rustup target add wasm32-unknown-unknown
 
-## 🎨 Temas por desastre
+# 3. wasm-pack
+cargo install wasm-pack
 
-| Tipo | Fundo | Partículas |
-|------|-------|-----------|
-| 🌋 Vulcão | Marrom quase preto | Brasas subindo |
-| 🌊 Tsunami/Enchente | Azul profundo | Ondas fluindo |
-| 🌀 Furacão/Ciclone | Verde-azulado escuro | Vento horizontal |
-| ⛈️ Tempestade | Índigo escuro | Partículas caindo |
-| ⚡ Terremoto | Âmbar escuro | Embers |
+# 4. Node deps
+npm install
+```
+
+## Dev
+
+```bash
+npm run dev          # builds WASM then starts Vite dev server
+```
+
+## Production build
+
+```bash
+npm run build        # wasm-pack build + vite build → dist/
+```
+
+## Deploy to GitHub Pages
+
+```bash
+GIT_USERNAME=lovizotto GIT_PASSWORD=<token> npm run deploy
+```
+
+Or manually:
+```bash
+npm run build
+cp -r dist/. ../terrawatch-pwa/
+cd ../terrawatch-pwa
+git add -A && git commit -m "deploy" && git push origin gh-pages
+```
+
+## Key crates
+
+| Crate | Purpose |
+|-------|---------|
+| `wasm-bindgen` | Rust ↔ JS interop |
+| `web-sys` | DOM, Worker, Geolocation APIs |
+| `js-sys` | JS builtins (Date, Object, Reflect) |
+| `serde` + `serde-wasm-bindgen` | JSON ↔ Rust structs |
+| `serde_json` | Parse embedded `static_events.json` |
+| `console_error_panic_hook` | Rust panics → browser console |
+
+## Why keep worker.js in JS?
+
+The data pipeline is pure network I/O: 50+ HTTP fetches + 35 Claude AI queries.
+WASM has no native `fetch` — it must call back into JS anyway.
+Keeping it in JS is simpler and adds zero overhead.
